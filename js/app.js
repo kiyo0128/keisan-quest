@@ -1,5 +1,5 @@
 /**
- * app.js - Main application controller (Phase 1 + Phase 2)
+ * app.js - Main application controller (Phase 1 + Phase 2 + Phase 3)
  */
 
 class GameApp {
@@ -17,6 +17,11 @@ class GameApp {
         this.totalScore = 0;
         this.bestStage = 0;
 
+        // Dialogue state
+        this.dialogueQueue = [];
+        this.dialogueCallback = null;
+        this.shownDialogues = new Set();
+
         // Screen elements
         this.screens = {
             title: document.getElementById('title-screen'),
@@ -26,6 +31,7 @@ class GameApp {
             crafting: document.getElementById('crafting-screen'),
             result: document.getElementById('result-screen'),
             miningResult: document.getElementById('mining-result-screen'),
+            map: document.getElementById('map-screen'),
         };
 
         // Result elements
@@ -87,6 +93,19 @@ class GameApp {
         document.getElementById('btn-hub-crafting').addEventListener('click', () => {
             this.sound.playButtonPress();
             this.showCrafting();
+        });
+        document.getElementById('btn-hub-map').addEventListener('click', () => {
+            this.sound.playButtonPress();
+            this.showWorldMap();
+        });
+        document.getElementById('btn-map-back').addEventListener('click', () => {
+            this.sound.playButtonPress();
+            this.goToHub();
+        });
+
+        // --- Dialogue ---
+        document.getElementById('dialogue-overlay').addEventListener('click', () => {
+            this.advanceDialogue();
         });
 
         // --- Battle Quit (途中でやめる) ---
@@ -181,6 +200,7 @@ class GameApp {
         else if (name === 'result') this.effects.createStars('result-stars');
         else if (name === 'hub') this.effects.createStars('hub-stars');
         else if (name === 'mining') this.effects.createStars('mining-stars');
+        else if (name === 'map') this.effects.createStars('map-stars');
         else if (name === 'crafting') this.effects.createStars('crafting-stars');
         else if (name === 'miningResult') this.effects.createStars('mining-result-stars');
     }
@@ -192,10 +212,54 @@ class GameApp {
         this.totalScore = 0;
         this.mathEngine.resetAll();
         this.inventory.reset();
-        this.goToHub();
+        this.shownDialogues = new Set();
+
+        // Show intro dialogue, then first area entrance
+        this.showDialogue(STORY_DIALOGUES.intro, () => {
+            this.showDialogue(STORY_DIALOGUES.area0_enter, () => {
+                this.goToHub();
+            });
+        });
     }
 
     goToHub() {
+        // Show pending story dialogues from victory
+        if (this._pendingClearDialogue) {
+            const key = this._pendingClearDialogue;
+            this._pendingClearDialogue = null;
+            const dialogues = STORY_DIALOGUES[key];
+            if (dialogues) {
+                this.showDialogue(dialogues, () => {
+                    if (this._pendingEnterDialogue) {
+                        const enterKey = this._pendingEnterDialogue;
+                        this._pendingEnterDialogue = null;
+                        const enterDialogues = STORY_DIALOGUES[enterKey];
+                        if (enterDialogues) {
+                            this.showDialogue(enterDialogues, () => {
+                                this.updateHubScreen();
+                                this.showScreen('hub');
+                            });
+                            return;
+                        }
+                    }
+                    this.updateHubScreen();
+                    this.showScreen('hub');
+                });
+                return;
+            }
+        }
+        if (this._pendingEnterDialogue) {
+            const key = this._pendingEnterDialogue;
+            this._pendingEnterDialogue = null;
+            const dialogues = STORY_DIALOGUES[key];
+            if (dialogues) {
+                this.showDialogue(dialogues, () => {
+                    this.updateHubScreen();
+                    this.showScreen('hub');
+                });
+                return;
+            }
+        }
         this.updateHubScreen();
         this.showScreen('hub');
     }
@@ -224,6 +288,18 @@ class GameApp {
 
         // Inventory bar
         this.renderInventoryBar(document.getElementById('hub-inventory'));
+
+        // Quest banner
+        const quest = getCurrentQuest(this.currentStage);
+        const banner = document.getElementById('hub-quest-banner');
+        if (quest) {
+            banner.style.display = '';
+            document.getElementById('hub-quest-icon').textContent = quest.icon;
+            document.getElementById('hub-quest-title').textContent = quest.isBoss ? '⭐ ボスクエスト' : '📋 つぎのクエスト';
+            document.getElementById('hub-quest-desc').textContent = quest.description;
+        } else {
+            banner.style.display = 'none';
+        }
     }
 
     renderInventoryBar(container) {
@@ -235,6 +311,22 @@ class GameApp {
     // --- Battle ---
 
     startBattle() {
+        // Check for boss story trigger
+        const trigger = getStoryTrigger(this.currentStage);
+        if (trigger && trigger.endsWith('_boss') && !this.shownDialogues.has(trigger)) {
+            this.shownDialogues.add(trigger);
+            const dialogues = STORY_DIALOGUES[trigger];
+            if (dialogues) {
+                this.showDialogue(dialogues, () => {
+                    this._launchBattle();
+                });
+                return;
+            }
+        }
+        this._launchBattle();
+    }
+
+    _launchBattle() {
         // Apply equipment bonuses
         const hpBonus = this.inventory.getHpBonus();
         this.battle.playerMaxHp = 100 + hpBonus;
@@ -258,6 +350,20 @@ class GameApp {
             this.bestStage = data.stage + 1;
         }
         this.currentStage++;
+
+        // Check for area clear story
+        const clearTrigger = getStoryTrigger(this.currentStage, data.stage);
+        if (clearTrigger && clearTrigger.endsWith('_clear') && !this.shownDialogues.has(clearTrigger)) {
+            this.shownDialogues.add(clearTrigger);
+            this._pendingClearDialogue = clearTrigger;
+        }
+
+        // Check for new area entrance story
+        const enterTrigger = getStoryTrigger(this.currentStage);
+        if (enterTrigger && enterTrigger.endsWith('_enter') && !this.shownDialogues.has(enterTrigger)) {
+            this.shownDialogues.add(enterTrigger);
+            this._pendingEnterDialogue = enterTrigger;
+        }
 
         // Drop resources as reward
         const loot = this.generateBattleLoot(data.stage);
@@ -441,6 +547,7 @@ class GameApp {
             currentStage: this.currentStage,
             totalScore: this.totalScore,
             mathLevel: this.mathEngine.level,
+            shownDialogues: [...this.shownDialogues],
         };
         try {
             localStorage.setItem('keisan-quest-save', JSON.stringify(data));
@@ -456,6 +563,7 @@ class GameApp {
                 this.currentStage = data.currentStage || 0;
                 this.totalScore = data.totalScore || 0;
                 if (data.mathLevel) this.mathEngine.level = data.mathLevel;
+                if (data.shownDialogues) this.shownDialogues = new Set(data.shownDialogues);
                 this.updateTitleScreen();
             }
         } catch (e) { }
@@ -474,6 +582,82 @@ class GameApp {
             stats.style.display = 'none';
             btnContinue.style.display = 'none';
         }
+    }
+
+    // --- Dialogue System ---
+
+    showDialogue(messages, callback) {
+        this.dialogueQueue = [...messages];
+        this.dialogueCallback = callback || null;
+        this._showNextDialogueLine();
+    }
+
+    _showNextDialogueLine() {
+        if (this.dialogueQueue.length === 0) {
+            document.getElementById('dialogue-overlay').classList.remove('active');
+            if (this.dialogueCallback) {
+                const cb = this.dialogueCallback;
+                this.dialogueCallback = null;
+                cb();
+            }
+            return;
+        }
+
+        const line = this.dialogueQueue.shift();
+        document.getElementById('dialogue-speaker-icon').textContent = line.speaker;
+        document.getElementById('dialogue-speaker-name').textContent = line.name;
+        document.getElementById('dialogue-text').textContent = line.text;
+        document.getElementById('dialogue-overlay').classList.add('active');
+        this.sound.playButtonPress();
+    }
+
+    advanceDialogue() {
+        this._showNextDialogueLine();
+    }
+
+    // --- World Map ---
+
+    showWorldMap() {
+        this.renderWorldMap();
+        this.showScreen('map');
+    }
+
+    renderWorldMap() {
+        const container = document.getElementById('map-world');
+        container.innerHTML = '';
+        const areas = getAreaProgress(this.currentStage);
+
+        areas.forEach((area, idx) => {
+            // Path connector between areas
+            if (idx > 0) {
+                const path = document.createElement('div');
+                path.className = 'map-path';
+                container.appendChild(path);
+            }
+
+            const node = document.createElement('div');
+            node.className = 'map-area-node';
+            if (!area.isUnlocked) node.classList.add('locked');
+            else if (area.currentInArea) node.classList.add('current');
+            else if (area.isCompleted) node.classList.add('completed');
+
+            const progressPct = (area.stagesCompleted / area.totalStages) * 100;
+            const statusIcon = area.isCompleted ? '✅' : area.currentInArea ? '⚔️' : area.isUnlocked ? '' : '🔒';
+
+            node.innerHTML = `
+                <div class="map-area-icon">${area.icon}</div>
+                <div class="map-area-info">
+                    <div class="map-area-name">${area.name}</div>
+                    <div class="map-area-progress">${area.stagesCompleted}/${area.totalStages} クリア</div>
+                    <div class="map-area-progress-bar">
+                        <div class="map-area-progress-fill" style="width:${progressPct}%; background:${area.color}"></div>
+                    </div>
+                </div>
+                <div class="map-area-status">${statusIcon}</div>
+            `;
+
+            container.appendChild(node);
+        });
     }
 }
 

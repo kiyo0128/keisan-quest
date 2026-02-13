@@ -57,6 +57,14 @@
                     <div class="hub-stage-info">ステージ <span id="hub-stage">1</span> ⭐ <span id="hub-score">0</span></div>
                 </div>
 
+                <div class="hub-quest-banner" id="hub-quest-banner" style="display:none">
+                    <span class="quest-icon" id="hub-quest-icon">🟢</span>
+                    <div class="quest-info">
+                        <div class="quest-title" id="hub-quest-title">つぎのクエスト</div>
+                        <div class="quest-desc" id="hub-quest-desc">スライムをたおそう！</div>
+                    </div>
+                </div>
+
                 <div class="hub-character-area">
                     <div class="hub-player">
                         <div class="hub-player-sprite">🧑‍🦰</div>
@@ -86,6 +94,27 @@
                     </button>
                     <button id="btn-hub-crafting" class="pixel-btn pixel-btn--crafting hub-btn">
                         <span class="btn-icon">🔨</span> クラフト
+                    </button>
+                    <button id="btn-hub-map" class="pixel-btn pixel-btn--secondary hub-btn">
+                        <span class="btn-icon">🗺️</span> ワールドマップ
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== WORLD MAP SCREEN ========== -->
+        <div id="map-screen" class="screen">
+            <div class="map-bg">
+                <div class="star-field" id="map-stars"></div>
+            </div>
+            <div class="map-content">
+                <div class="map-header">
+                    <h2 class="map-title">🗺️ ワールドマップ</h2>
+                </div>
+                <div class="map-world" id="map-world"></div>
+                <div class="map-footer">
+                    <button id="btn-map-back" class="pixel-btn pixel-btn--secondary">
+                        <span class="btn-icon">⬅️</span> もどる
                     </button>
                 </div>
             </div>
@@ -315,10 +344,23 @@
                 </div>
             </div>
         </div>
+
+        <!-- ========== DIALOGUE OVERLAY ========== -->
+        <div id="dialogue-overlay" class="dialogue-overlay">
+            <div class="dialogue-box">
+                <div class="dialogue-speaker">
+                    <span class="dialogue-speaker-icon" id="dialogue-speaker-icon">👴</span>
+                    <span class="dialogue-speaker-name" id="dialogue-speaker-name">そんちょう</span>
+                </div>
+                <div class="dialogue-text" id="dialogue-text">ゆうしゃよ、まものがブロックワールドをおそっている！</div>
+                <div class="dialogue-next">▼ タップでつぎへ</div>
+            </div>
+        </div>
     </div>
 
     <script src="js/inventory.js"></script>
     <script src="js/monsters.js"></script>
+    <script src="js/story.js"></script>
     <script src="js/math-engine.js"></script>
     <script src="js/effects.js"></script>
     <script src="js/battle.js"></script>

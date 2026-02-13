@@ -1876,3 +1876,302 @@ body {
     transform: scale(1);
   }
 }
+
+/* ============================================
+   PHASE 3: DIALOGUE, WORLD MAP, QUESTS
+   ============================================ */
+
+/* --- Dialogue Overlay --- */
+
+.dialogue-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: none;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 20px;
+  cursor: pointer;
+}
+
+.dialogue-overlay.active {
+  display: flex;
+}
+
+.dialogue-box {
+  width: 100%;
+  max-width: 520px;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 3px solid var(--accent-gold);
+  border-radius: 12px;
+  padding: 16px 20px 12px;
+  margin-bottom: 40px;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.15), inset 0 0 20px rgba(0, 0, 0, 0.4);
+  animation: dialogueAppear 0.3s ease;
+}
+
+@keyframes dialogueAppear {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.dialogue-speaker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dialogue-speaker-icon {
+  font-size: 1.8rem;
+  filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.4));
+}
+
+.dialogue-speaker-name {
+  font-family: 'DotGothic16', sans-serif;
+  font-size: 0.85rem;
+  color: var(--accent-gold);
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+
+.dialogue-text {
+  font-family: 'DotGothic16', sans-serif;
+  font-size: 1.1rem;
+  color: #e8e8e8;
+  line-height: 1.8;
+  min-height: 3em;
+  padding: 4px 0;
+}
+
+.dialogue-next {
+  text-align: right;
+  font-family: 'DotGothic16', sans-serif;
+  font-size: 0.7rem;
+  color: rgba(255, 215, 0, 0.6);
+  margin-top: 6px;
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* --- Quest Banner (Hub) --- */
+
+.hub-quest-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.05));
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 0 auto 12px;
+  max-width: 340px;
+  animation: questGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes questGlow {
+  0% {
+    border-color: rgba(255, 215, 0, 0.2);
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.05);
+  }
+
+  100% {
+    border-color: rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 16px rgba(255, 215, 0, 0.15);
+  }
+}
+
+.quest-icon {
+  font-size: 1.6rem;
+}
+
+.quest-info {
+  flex: 1;
+  text-align: left;
+}
+
+.quest-title {
+  font-family: 'DotGothic16', sans-serif;
+  font-size: 0.7rem;
+  color: var(--accent-gold);
+  letter-spacing: 0.05em;
+}
+
+.quest-desc {
+  font-family: 'DotGothic16', sans-serif;
+  font-size: 0.9rem;
+  color: #e8e8e8;
+  margin-top: 2px;
+}
+
+/* --- World Map Screen --- */
+
+.map-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #0a0a1a 0%, #1a1a3e 50%, #0d2b0d 100%);
+  overflow: hidden;
+}
+
+.map-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 20px;
+}
+
+.map-header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.map-title {
+  font-family: 'DotGothic16', sans-serif;
+  font-size: 1.2rem;
+  color: var(--accent-gold);
+}
+
+.map-world {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+}
+
+.map-area-node {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 340px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.map-area-node:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(4px);
+}
+
+.map-area-node.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+.map-area-node.locked:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: none;
+}
+
+.map-area-node.current {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+  animation: currentAreaPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes currentAreaPulse {
+  0% {
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
+  }
+
+  100% {
+    box-shadow: 0 0 24px rgba(255, 215, 0, 0.3);
+  }
+}
+
+.map-area-node.completed {
+  border-color: #4caf50;
+  opacity: 0.85;
+}
+
+.map-area-icon {
+  font-size: 2rem;
+  min-width: 44px;
+  text-align: center;
+}
+
+.map-area-info {
+  flex: 1;
+}
+
+.map-area-name {
+  font-family: 'DotGothic16', sans-serif;
+  font-size: 0.95rem;
+  color: #e8e8e8;
+  font-weight: bold;
+}
+
+.map-area-progress {
+  font-family: 'DotGothic16', sans-serif;
+  font-size: 0.7rem;
+  color: #8b949e;
+  margin-top: 4px;
+}
+
+.map-area-progress-bar {
+  width: 100%;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.map-area-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.map-area-status {
+  font-size: 1.2rem;
+  min-width: 30px;
+  text-align: center;
+}
+
+.map-path {
+  width: 2px;
+  height: 24px;
+  background: repeating-linear-gradient(to bottom,
+      rgba(255, 255, 255, 0.2) 0px,
+      rgba(255, 255, 255, 0.2) 4px,
+      transparent 4px,
+      transparent 8px);
+  margin: -4px 0;
+}
+
+.map-footer {
+  text-align: center;
+  padding-top: 10px;
+}
