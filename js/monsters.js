@@ -136,3 +136,19 @@ function getArea(stageIndex) {
 // Player damage per correct answer
 const PLAYER_ATTACK_BASE = 10;
 const COMBO_BONUS = 2; // Extra damage per combo
+
+// Time limit per area (seconds)
+// 草原 = 15s, 山岳 = 12s, 火山 = 10s, エンドレス = 8s
+const TIME_LIMITS = [15, 12, 10];
+const TIME_LIMIT_ENDLESS = 8;
+
+/**
+ * Get time limit (in seconds) for a given stage.
+ */
+function getTimeLimit(stageIndex) {
+    if (stageIndex < MONSTERS.length) {
+        const areaIndex = MONSTERS[stageIndex].area;
+        return TIME_LIMITS[areaIndex];
+    }
+    return TIME_LIMIT_ENDLESS;
+}

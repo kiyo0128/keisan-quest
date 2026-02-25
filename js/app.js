@@ -113,6 +113,7 @@ class GameApp {
             this.sound.playButtonPress();
             if (this.battle.battleActive) {
                 this.battle.battleActive = false;
+                this.battle.stopTimer();
             }
             this.goToHub();
         });
