@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "keisan-quest-game",
     "public": ".",
     "ignore": [
       "firebase.json",
