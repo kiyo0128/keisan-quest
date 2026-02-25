@@ -21,6 +21,12 @@ class BattleSystem {
         this.isProcessing = false;
         this.battleActive = false;
 
+        // Timer state
+        this.timerDuration = 15; // seconds
+        this.timerRemaining = 0;
+        this.timerAnimFrame = null;
+        this.timerStartTime = 0;
+
         // Callbacks
         this.onVictory = null;
         this.onDefeat = null;
@@ -47,6 +53,9 @@ class BattleSystem {
             messageOverlay: document.getElementById('message-overlay'),
             messageText: document.getElementById('message-text'),
             problemSection: document.getElementById('problem-section'),
+            timerBarContainer: document.getElementById('timer-bar-container'),
+            timerBarFill: document.getElementById('timer-bar-fill'),
+            timerBarText: document.getElementById('timer-bar-text'),
         };
     }
 
@@ -62,6 +71,7 @@ class BattleSystem {
         this.inputValue = '';
         this.isProcessing = false;
         this.battleActive = true;
+        this.timerDuration = getTimeLimit(stageIndex);
         this.math.resetStage();
 
         // Update UI
@@ -100,6 +110,7 @@ class BattleSystem {
         this.els.numB.textContent = this.currentProblem.b;
         this.els.answerDisplay.textContent = '?';
         this.els.answerDisplay.style.color = '';
+        this.startTimer();
     }
 
     /**
@@ -132,6 +143,7 @@ class BattleSystem {
     handleSubmit() {
         if (this.isProcessing || !this.battleActive || this.inputValue === '') return;
         this.isProcessing = true;
+        this.stopTimer();
 
         const userAnswer = parseInt(this.inputValue, 10);
         const result = this.math.checkAnswer(userAnswer, this.currentProblem.answer);
@@ -265,6 +277,7 @@ class BattleSystem {
      */
     onMonsterDefeated() {
         this.battleActive = false;
+        this.stopTimer();
         this.sound.playMonsterDefeat();
 
         // Monster death animation
@@ -296,6 +309,7 @@ class BattleSystem {
      */
     onPlayerDefeated() {
         this.battleActive = false;
+        this.stopTimer();
         this.sound.playDefeat();
 
         this.showMessage('やられた…😵', 'wrong');
@@ -358,5 +372,100 @@ class BattleSystem {
         setTimeout(() => {
             this.els.messageOverlay.classList.remove('show');
         }, 900);
+    }
+
+    // --- Timer ---
+
+    startTimer() {
+        this.stopTimer();
+        this.timerStartTime = performance.now();
+        this.timerRemaining = this.timerDuration;
+
+        // Reset bar appearance
+        this.els.timerBarFill.style.width = '100%';
+        this.els.timerBarFill.classList.remove('timer-warning', 'timer-danger');
+        this.els.timerBarText.textContent = `⏱️ ${this.timerDuration}`;
+
+        // Use requestAnimationFrame for smooth bar animation
+        const updateTimer = () => {
+            if (!this.battleActive || this.isProcessing) return;
+
+            const elapsed = (performance.now() - this.timerStartTime) / 1000;
+            this.timerRemaining = Math.max(0, this.timerDuration - elapsed);
+
+            const percent = (this.timerRemaining / this.timerDuration) * 100;
+            this.els.timerBarFill.style.width = `${percent}%`;
+            this.els.timerBarText.textContent = `⏱️ ${Math.ceil(this.timerRemaining)}`;
+
+            // Color changes based on remaining time
+            if (this.timerRemaining <= this.timerDuration * 0.25) {
+                this.els.timerBarFill.classList.remove('timer-warning');
+                this.els.timerBarFill.classList.add('timer-danger');
+            } else if (this.timerRemaining <= this.timerDuration * 0.5) {
+                this.els.timerBarFill.classList.add('timer-warning');
+                this.els.timerBarFill.classList.remove('timer-danger');
+            }
+
+            if (this.timerRemaining <= 0) {
+                this.onTimeUp();
+                return;
+            }
+
+            this.timerAnimFrame = requestAnimationFrame(updateTimer);
+        };
+
+        this.timerAnimFrame = requestAnimationFrame(updateTimer);
+    }
+
+    stopTimer() {
+        if (this.timerAnimFrame) {
+            cancelAnimationFrame(this.timerAnimFrame);
+            this.timerAnimFrame = null;
+        }
+    }
+
+    onTimeUp() {
+        if (this.isProcessing || !this.battleActive) return;
+        this.isProcessing = true;
+        this.stopTimer();
+
+        // Time's up = monster attacks (same as wrong answer but with unique message)
+        const damage = this.monster.attack;
+
+        this.sound.playWrong();
+
+        // Show correct answer
+        this.els.answerDisplay.textContent = this.currentProblem.answer;
+        this.els.answerDisplay.style.color = '#f44336';
+
+        // Show time-up message
+        const messages = ['じかんぎれ！⏱️💥', 'おそすぎた！💦', 'まにあわなかった！⏱️'];
+        this.showMessage(messages[Math.floor(Math.random() * messages.length)], 'wrong');
+
+        // Effects
+        this.effects.wrongEffect();
+        this.effects.showDamageNumber(this.els.playerContainer, damage, false);
+
+        // Register as wrong answer in math engine
+        this.math.checkAnswer(-1, this.currentProblem.answer);
+
+        // Reset combo
+        this.updateCombo(0);
+
+        // Apply damage to player
+        this.playerHp = Math.max(0, this.playerHp - damage);
+        this.updateHpBars();
+
+        // Check player defeated
+        if (this.playerHp <= 0) {
+            this.onPlayerDefeated();
+            return;
+        }
+
+        // Next problem after delay
+        setTimeout(() => {
+            this.isProcessing = false;
+            this.nextProblem();
+        }, 1200);
     }
 }

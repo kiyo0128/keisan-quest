@@ -563,6 +563,57 @@ body {
   margin-top: 2px;
 }
 
+/* --- Timer Bar --- */
+.timer-bar-container {
+  position: relative;
+  width: 90%;
+  max-width: 320px;
+  height: 18px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.timer-bar-fill {
+  height: 100%;
+  width: 100%;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #43e97b, #38f9d7);
+  transition: width 0.1s linear;
+  position: relative;
+}
+
+.timer-bar-fill.timer-warning {
+  background: linear-gradient(90deg, #ff9800, #ffc107);
+}
+
+.timer-bar-fill.timer-danger {
+  background: linear-gradient(90deg, #f44336, #ff6b6b);
+  animation: timerPulse 0.5s ease-in-out infinite;
+}
+
+@keyframes timerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.timer-bar-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: var(--text-white);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
 /* --- Problem Section --- */
 .problem-section {
   display: flex;
