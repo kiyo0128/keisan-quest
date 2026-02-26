@@ -84,6 +84,7 @@
                 <div class="hub-inventory" id="hub-inventory">
                     <!-- Filled by JS -->
                 </div>
+                <div class="hub-food-buff" id="hub-food-buff" style="display:none"></div>
 
                 <div class="hub-buttons">
                     <button id="btn-hub-battle" class="pixel-btn pixel-btn--primary hub-btn">
@@ -263,17 +264,27 @@
             </div>
             <div class="crafting-content">
                 <div class="crafting-header">
-                    <h2 class="crafting-title">🔨 クラフト</h2>
+                    <h2 class="crafting-title" id="crafting-title">🔨 クラフト</h2>
                     <div class="crafting-inv" id="crafting-inv"></div>
                 </div>
-                <div class="crafting-equipment">
-                    <div class="equip-current">
-                        <span class="equip-label">そうび中:</span>
-                        <span id="craft-equipped-weapon">🗡️ なし</span>
-                        <span id="craft-equipped-armor">🛡️ なし</span>
-                    </div>
+                <div class="crafting-tabs">
+                    <button class="craft-tab active" id="tab-equip" data-tab="equip">🔨 そうび</button>
+                    <button class="craft-tab" id="tab-food" data-tab="food">🍳 りょうり</button>
                 </div>
-                <div class="crafting-recipes" id="crafting-recipes"></div>
+                <div class="crafting-tab-content" id="crafting-tab-equip">
+                    <div class="crafting-equipment">
+                        <div class="equip-current">
+                            <span class="equip-label">そうび中:</span>
+                            <span id="craft-equipped-weapon">🗡️ なし</span>
+                            <span id="craft-equipped-armor">🛡️ なし</span>
+                        </div>
+                    </div>
+                    <div class="crafting-recipes" id="crafting-recipes"></div>
+                </div>
+                <div class="crafting-tab-content" id="crafting-tab-food" style="display:none">
+                    <div class="food-buff-status" id="food-buff-status"></div>
+                    <div class="crafting-recipes" id="food-recipes"></div>
+                </div>
                 <div class="crafting-footer">
                     <button id="btn-crafting-back" class="pixel-btn pixel-btn--secondary">
                         <span class="btn-icon">⬅️</span> もどる

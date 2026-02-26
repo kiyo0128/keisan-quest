@@ -1865,6 +1865,103 @@ body {
   padding-top: 8px;
 }
 
+/* --- Crafting Tabs --- */
+.crafting-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.craft-tab {
+  flex: 1;
+  padding: 8px 12px;
+  font-family: var(--font-pixel);
+  font-size: 0.85rem;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.3);
+  color: #8b949e;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.craft-tab.active {
+  background: var(--bg-panel);
+  color: var(--text-white);
+  border-color: rgba(88, 214, 240, 0.4);
+  border-bottom-color: transparent;
+}
+
+.craft-tab:not(.active):hover {
+  color: var(--text-white);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.crafting-tab-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* --- Food UI --- */
+.food-buff-status {
+  padding: 8px 12px;
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #ffd700;
+  text-align: center;
+}
+
+.food-count {
+  color: var(--accent-cyan);
+  font-size: 0.8rem;
+}
+
+.recipe-action--food {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.craft-btn--cook {
+  font-size: 0.75rem;
+  padding: 6px 10px;
+}
+
+.craft-btn--eat {
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  border: 2px solid #cc8800;
+  background: linear-gradient(180deg, #ff9900, #cc7700);
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 0 #aa6600;
+  font-family: var(--font-pixel);
+}
+
+.craft-btn--eat:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* --- Hub Food Buff --- */
+.hub-food-buff {
+  padding: 6px 10px;
+  background: rgba(255, 215, 0, 0.12);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: #ffd700;
+  text-align: center;
+  margin-top: 4px;
+}
+
 /* ============================================
    LOOT / BATTLE REWARDS
    ============================================ */

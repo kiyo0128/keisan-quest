@@ -20,6 +20,12 @@ class Inventory {
         // Crafted items owned
         this.ownedItems = [];
 
+        // Food items (consumable, tracked by quantity)
+        this.foodItems = {};
+
+        // Active food buffs (applied to next battle)
+        this.foodBuffs = { hpBonus: 0, attackBonus: 0 };
+
         this.load();
     }
 
@@ -71,15 +77,21 @@ class Inventory {
     craft(recipe) {
         if (!this.hasResources(recipe.cost)) return false;
         this.spendResources(recipe.cost);
-        this.ownedItems.push(recipe.id);
-        // Auto-equip if better
-        if (recipe.type === 'weapon') {
-            if (!this.equippedWeapon || recipe.attackBonus > this.equippedWeapon.attackBonus) {
-                this.equipItem(recipe);
-            }
-        } else if (recipe.type === 'armor') {
-            if (!this.equippedArmor || recipe.hpBonus > this.equippedArmor.hpBonus) {
-                this.equipItem(recipe);
+
+        if (recipe.type === 'food') {
+            // Food items are consumable and can be crafted multiple times
+            this.foodItems[recipe.id] = (this.foodItems[recipe.id] || 0) + 1;
+        } else {
+            this.ownedItems.push(recipe.id);
+            // Auto-equip if better
+            if (recipe.type === 'weapon') {
+                if (!this.equippedWeapon || recipe.attackBonus > this.equippedWeapon.attackBonus) {
+                    this.equipItem(recipe);
+                }
+            } else if (recipe.type === 'armor') {
+                if (!this.equippedArmor || recipe.hpBonus > this.equippedArmor.hpBonus) {
+                    this.equipItem(recipe);
+                }
             }
         }
         this.save();
@@ -88,6 +100,34 @@ class Inventory {
 
     hasCrafted(recipeId) {
         return this.ownedItems.includes(recipeId);
+    }
+
+    // --- Food ---
+
+    getFoodCount(recipeId) {
+        return this.foodItems[recipeId] || 0;
+    }
+
+    useFood(recipe) {
+        if ((this.foodItems[recipe.id] || 0) <= 0) return false;
+        this.foodItems[recipe.id]--;
+        if (this.foodItems[recipe.id] <= 0) delete this.foodItems[recipe.id];
+
+        // Apply buff
+        if (recipe.hpBonus) this.foodBuffs.hpBonus += recipe.hpBonus;
+        if (recipe.attackBonus) this.foodBuffs.attackBonus += recipe.attackBonus;
+
+        this.save();
+        return true;
+    }
+
+    getFoodBuffs() {
+        return { ...this.foodBuffs };
+    }
+
+    clearFoodBuffs() {
+        this.foodBuffs = { hpBonus: 0, attackBonus: 0 };
+        this.save();
     }
 
     // --- Save/Load ---
@@ -99,6 +139,8 @@ class Inventory {
                 equippedWeapon: this.equippedWeapon,
                 equippedArmor: this.equippedArmor,
                 ownedItems: this.ownedItems,
+                foodItems: this.foodItems,
+                foodBuffs: this.foodBuffs,
             };
             localStorage.setItem('keisan-quest-inventory', JSON.stringify(data));
         } catch (e) { }
@@ -113,6 +155,8 @@ class Inventory {
                 this.equippedWeapon = data.equippedWeapon || null;
                 this.equippedArmor = data.equippedArmor || null;
                 this.ownedItems = data.ownedItems || [];
+                this.foodItems = data.foodItems || {};
+                this.foodBuffs = data.foodBuffs || { hpBonus: 0, attackBonus: 0 };
             }
         } catch (e) { }
     }
@@ -122,6 +166,8 @@ class Inventory {
         this.equippedWeapon = null;
         this.equippedArmor = null;
         this.ownedItems = [];
+        this.foodItems = {};
+        this.foodBuffs = { hpBonus: 0, attackBonus: 0 };
         this.save();
     }
 }
@@ -208,6 +254,50 @@ const RECIPES = [
         hpBonus: 50,
         cost: { diamond: 5, iron: 3 },
         description: 'HP +50',
+    },
+];
+
+// --- Food Recipes ---
+const FOOD_RECIPES = [
+    {
+        id: 'apple',
+        name: 'やきりんご',
+        icon: '🍎',
+        type: 'food',
+        hpBonus: 10,
+        attackBonus: 0,
+        cost: { wood: 2 },
+        description: 'HP +10',
+    },
+    {
+        id: 'steak',
+        name: 'やきにく',
+        icon: '🍖',
+        type: 'food',
+        hpBonus: 20,
+        attackBonus: 0,
+        cost: { wood: 3, stone: 1 },
+        description: 'HP +20',
+    },
+    {
+        id: 'golden_apple',
+        name: 'きんのりんご',
+        icon: '🍏',
+        type: 'food',
+        hpBonus: 15,
+        attackBonus: 3,
+        cost: { wood: 2, gold: 1 },
+        description: 'HP +15, こうげき +3',
+    },
+    {
+        id: 'cake',
+        name: 'スペシャルケーキ',
+        icon: '🍰',
+        type: 'food',
+        hpBonus: 30,
+        attackBonus: 5,
+        cost: { wood: 5, gold: 2 },
+        description: 'HP +30, こうげき +5',
     },
 ];
 
