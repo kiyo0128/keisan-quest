@@ -96,9 +96,7 @@
                     <button id="btn-hub-crafting" class="pixel-btn pixel-btn--crafting hub-btn">
                         <span class="btn-icon">🔨</span> クラフト
                     </button>
-                    <button id="btn-hub-cooking" class="pixel-btn pixel-btn--cooking hub-btn">
-                        <span class="btn-icon">🍳</span> りょうり
-                    </button>
+
                     <button id="btn-hub-map" class="pixel-btn pixel-btn--secondary hub-btn">
                         <span class="btn-icon">🗺️</span> ワールドマップ
                     </button>
@@ -286,7 +284,45 @@
                 </div>
                 <div class="crafting-tab-content" id="crafting-tab-food" style="display:none">
                     <div class="food-buff-status" id="food-buff-status"></div>
+                    <!-- Recipe list (shown initially) -->
                     <div class="crafting-recipes" id="food-recipes"></div>
+                    <!-- Timing minigame (shown when cooking) -->
+                    <div class="cooking-timing-area" id="cooking-timing-area" style="display:none">
+                        <div class="cooking-recipe-header">
+                            <span class="cooking-recipe-icon" id="cooking-recipe-icon">🍠</span>
+                            <span class="cooking-recipe-name" id="cooking-recipe-name">やきいも</span>
+                        </div>
+                        <div class="cooking-progress" id="cooking-progress"></div>
+                        <div class="timing-bar-container">
+                            <div class="timing-bar" id="timing-bar">
+                                <div class="timing-target" id="timing-target"></div>
+                                <div class="timing-marker" id="timing-marker"></div>
+                            </div>
+                        </div>
+                        <button class="pixel-btn pixel-btn--cooking cooking-tap-btn" id="cooking-tap-btn">
+                            <span class="btn-icon">👆</span> タップ！
+                        </button>
+                    </div>
+                    <!-- Cooking result overlay -->
+                    <div class="cooking-result-overlay" id="cooking-result-overlay" style="display:none">
+                        <div class="cooking-result-card">
+                            <div class="result-icon" id="cooking-result-icon">🍳</div>
+                            <h3 class="result-title" id="cooking-result-title">りょうりかんりょう！</h3>
+                            <div class="cooking-result-stars" id="cooking-result-stars-display"></div>
+                            <div class="cooking-result-item">
+                                <span class="cooking-result-item-icon" id="cooking-result-item-icon">🍠</span>
+                                <span class="cooking-result-item-name" id="cooking-result-item-name">やきいも</span>
+                            </div>
+                            <div class="cooking-result-effect" id="cooking-result-effect">HP +20 かいふく</div>
+                            <button id="btn-cooking-result-ok" class="pixel-btn pixel-btn--primary">
+                                <span class="btn-icon">👍</span> OK
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Message overlay -->
+                    <div class="message-overlay" id="cooking-message">
+                        <div class="message-text" id="cooking-message-text"></div>
+                    </div>
                 </div>
                 <div class="crafting-footer">
                     <button id="btn-crafting-back" class="pixel-btn pixel-btn--secondary">
@@ -366,67 +402,7 @@
             </div>
         </div>
 
-        <!-- ========== COOKING SCREEN ========== -->
-        <div id="cooking-screen" class="screen">
-            <div class="cooking-bg">
-                <div class="star-field" id="cooking-stars"></div>
-            </div>
-            <div class="cooking-hud">
-                <div class="hud-left">
-                    <button id="btn-cooking-quit" class="mining-back-btn">⬅️</button>
-                    <span class="stage-label">🍳 りょうり</span>
-                </div>
-            </div>
-            <div class="cooking-field">
-                <!-- Recipe selection -->
-                <div class="cooking-recipe-list" id="cooking-recipe-list"></div>
 
-                <!-- Timing game area -->
-                <div class="cooking-timing-area" id="cooking-timing-area" style="display:none">
-                    <div class="cooking-recipe-header">
-                        <span class="cooking-recipe-icon" id="cooking-recipe-icon">🍠</span>
-                        <span class="cooking-recipe-name" id="cooking-recipe-name">やきいも</span>
-                    </div>
-                    <div class="cooking-progress" id="cooking-progress"></div>
-                    <div class="timing-bar-container">
-                        <div class="timing-bar" id="timing-bar">
-                            <div class="timing-target" id="timing-target"></div>
-                            <div class="timing-marker" id="timing-marker"></div>
-                        </div>
-                    </div>
-                    <button class="pixel-btn pixel-btn--cooking cooking-tap-btn" id="cooking-tap-btn">
-                        <span class="btn-icon">👆</span> タップ！
-                    </button>
-                </div>
-
-                <div class="message-overlay" id="cooking-message">
-                    <div class="message-text" id="cooking-message-text"></div>
-                </div>
-                <div class="cooking-inv-bar" id="cooking-inv-bar"></div>
-            </div>
-        </div>
-
-        <!-- ========== COOKING RESULT SCREEN ========== -->
-        <div id="cooking-result-screen" class="screen">
-            <div class="result-bg">
-                <div class="star-field" id="cooking-result-stars"></div>
-            </div>
-            <div class="result-content">
-                <div class="result-icon" id="cooking-result-icon">🍳</div>
-                <h2 class="result-title" id="cooking-result-title">りょうりかんりょう！</h2>
-                <div class="cooking-result-stars" id="cooking-result-stars-display"></div>
-                <div class="cooking-result-item">
-                    <span class="cooking-result-item-icon" id="cooking-result-item-icon">🍠</span>
-                    <span class="cooking-result-item-name" id="cooking-result-item-name">やきいも</span>
-                </div>
-                <div class="cooking-result-effect" id="cooking-result-effect">HP +20 かいふく</div>
-                <div class="result-buttons">
-                    <button id="btn-cooking-result-back" class="pixel-btn pixel-btn--primary">
-                        <span class="btn-icon">🏠</span> きちへもどる
-                    </button>
-                </div>
-            </div>
-        </div>
 
         <!-- ========== DIALOGUE OVERLAY ========== -->
         <div id="dialogue-overlay" class="dialogue-overlay">

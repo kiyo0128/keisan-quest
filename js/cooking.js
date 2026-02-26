@@ -1,5 +1,6 @@
 /**
  * cooking.js - Cooking mini-game system with timing bar mechanic
+ * Integrated into crafting screen's food tab.
  */
 
 // --- Cooking Recipes ---
@@ -71,14 +72,13 @@ class CookingSystem {
         this.animId = null;
         this.lastTimestamp = 0;
         this.cookingActive = false;
-        this.phase = 'recipe';     // 'recipe' | 'timing' | 'done'
+        this.phase = 'idle';     // 'idle' | 'timing' | 'done'
 
         // Callbacks
         this.onComplete = null;
 
-        // DOM
+        // DOM references (within crafting screen's food tab)
         this.els = {
-            recipeList: document.getElementById('cooking-recipe-list'),
             timingArea: document.getElementById('cooking-timing-area'),
             timingBar: document.getElementById('timing-bar'),
             timingMarker: document.getElementById('timing-marker'),
@@ -89,62 +89,12 @@ class CookingSystem {
             recipeIcon: document.getElementById('cooking-recipe-icon'),
             messageOverlay: document.getElementById('cooking-message'),
             messageText: document.getElementById('cooking-message-text'),
-            invBar: document.getElementById('cooking-inv-bar'),
+            foodRecipes: document.getElementById('food-recipes'),
         };
     }
 
     /**
-     * Show recipe selection screen.
-     */
-    showRecipeScreen() {
-        this.phase = 'recipe';
-        this.cookingActive = true;
-        this.els.timingArea.style.display = 'none';
-        this.els.recipeList.style.display = '';
-        this.renderRecipeList();
-        this.updateInventoryBar();
-    }
-
-    renderRecipeList() {
-        this.els.recipeList.innerHTML = COOKING_RECIPES.map((recipe) => {
-            const canCook = this.inventory.hasResources(recipe.cost);
-            const costHtml = Object.entries(recipe.cost).map(([type, amount]) => {
-                const info = RESOURCE_INFO[type];
-                const has = this.inventory.resources[type] || 0;
-                const enough = has >= amount;
-                return `<span class="recipe-cost-item ${enough ? '' : 'insufficient'}">${info.icon}×${amount}</span>`;
-            }).join('');
-
-            return `
-                <div class="cooking-recipe-card ${canCook ? '' : 'disabled'}" data-recipe-id="${recipe.id}">
-                    <div class="recipe-card-icon">${recipe.icon}</div>
-                    <div class="recipe-card-info">
-                        <div class="recipe-card-name">${recipe.name}</div>
-                        <div class="recipe-card-desc">${recipe.description}</div>
-                        <div class="recipe-card-cost">${costHtml}</div>
-                    </div>
-                    <div class="recipe-card-difficulty">
-                        ${'⏱️'.repeat(recipe.attempts)}
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        // Bind click events
-        this.els.recipeList.querySelectorAll('.cooking-recipe-card:not(.disabled)').forEach(card => {
-            card.addEventListener('click', () => {
-                const recipeId = card.dataset.recipeId;
-                const recipe = COOKING_RECIPES.find(r => r.id === recipeId);
-                if (recipe) {
-                    this.sound.playButtonPress();
-                    this.startCooking(recipe);
-                }
-            });
-        });
-    }
-
-    /**
-     * Start timing mini-game for a recipe.
+     * Start timing mini-game for a recipe (called from crafting tab).
      */
     startCooking(recipe) {
         if (!this.inventory.spendResources(recipe.cost)) return;
@@ -155,14 +105,15 @@ class CookingSystem {
         this.currentAttempt = 0;
         this.markerSpeed = recipe.speed;
         this.phase = 'timing';
+        this.cookingActive = true;
 
         // Calculate target zone
         const halfWidth = recipe.targetWidth / 2;
         this.targetStart = 50 - halfWidth;
         this.targetEnd = 50 + halfWidth;
 
-        // Switch UI
-        this.els.recipeList.style.display = 'none';
+        // Switch UI: hide recipe list, show timing area
+        this.els.foodRecipes.style.display = 'none';
         this.els.timingArea.style.display = '';
         this.els.recipeName.textContent = recipe.name;
         this.els.recipeIcon.textContent = recipe.icon;
@@ -293,6 +244,9 @@ class CookingSystem {
         // Add to inventory
         this.inventory.addCookedItem(cookedItem);
 
+        // Hide timing area
+        this.els.timingArea.style.display = 'none';
+
         if (this.onComplete) {
             this.onComplete({
                 item: cookedItem,
@@ -302,11 +256,21 @@ class CookingSystem {
         }
     }
 
+    /**
+     * Cancel cooking and return to recipe list.
+     */
+    cancel() {
+        this.stopOscillation();
+        this.cookingActive = false;
+        this.phase = 'idle';
+        this.els.timingArea.style.display = 'none';
+        this.els.foodRecipes.style.display = '';
+    }
+
     updateProgress() {
         let html = '';
         for (let i = 0; i < this.totalAttempts; i++) {
             if (i < this.currentAttempt) {
-                // Completed - check if it was within the attempt results
                 html += '<span class="progress-dot done">●</span>';
             } else if (i === this.currentAttempt) {
                 html += '<span class="progress-dot current">◉</span>';
@@ -315,13 +279,6 @@ class CookingSystem {
             }
         }
         this.els.progress.innerHTML = html;
-    }
-
-    updateInventoryBar() {
-        const inv = this.inventory.resources;
-        this.els.invBar.innerHTML = Object.entries(RESOURCE_INFO).map(([type, info]) => {
-            return `<span class="mining-inv-item"><span class="inv-icon">${info.icon}</span>${inv[type] || 0}</span>`;
-        }).join('');
     }
 
     showMessage(text, type) {

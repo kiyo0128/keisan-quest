@@ -23,6 +23,9 @@ class Inventory {
         // Food items (consumable, tracked by quantity)
         this.foodItems = {};
 
+        // Cooked item data (stores heal/buff info per recipe)
+        this.cookedItemData = {};
+
         // Active food buffs (applied to next battle)
         this.foodBuffs = { hpBonus: 0, attackBonus: 0 };
 
@@ -108,14 +111,39 @@ class Inventory {
         return this.foodItems[recipeId] || 0;
     }
 
-    useFood(recipe) {
-        if ((this.foodItems[recipe.id] || 0) <= 0) return false;
-        this.foodItems[recipe.id]--;
-        if (this.foodItems[recipe.id] <= 0) delete this.foodItems[recipe.id];
+    getCookedItemData(recipeId) {
+        return this.cookedItemData[recipeId] || null;
+    }
+
+    addCookedItem(item) {
+        this.foodItems[item.recipeId] = (this.foodItems[item.recipeId] || 0) + 1;
+        // Store latest cooked data (best quality overwrites)
+        const existing = this.cookedItemData[item.recipeId];
+        if (!existing || item.heal > (existing.heal || 0)) {
+            this.cookedItemData[item.recipeId] = {
+                name: item.name,
+                icon: item.icon,
+                heal: item.heal,
+                buff: item.buff,
+                stars: item.stars,
+            };
+        }
+        this.save();
+    }
+
+    useFood(recipeId) {
+        if ((this.foodItems[recipeId] || 0) <= 0) return false;
+        const item = this.cookedItemData[recipeId];
+        if (!item) return false;
+        this.foodItems[recipeId]--;
+        if (this.foodItems[recipeId] <= 0) {
+            delete this.foodItems[recipeId];
+            delete this.cookedItemData[recipeId];
+        }
 
         // Apply buff
-        if (recipe.hpBonus) this.foodBuffs.hpBonus += recipe.hpBonus;
-        if (recipe.attackBonus) this.foodBuffs.attackBonus += recipe.attackBonus;
+        if (item.heal) this.foodBuffs.hpBonus += item.heal;
+        if (item.buff && item.buff.attack) this.foodBuffs.attackBonus += item.buff.attack;
 
         this.save();
         return true;
@@ -140,6 +168,7 @@ class Inventory {
                 equippedArmor: this.equippedArmor,
                 ownedItems: this.ownedItems,
                 foodItems: this.foodItems,
+                cookedItemData: this.cookedItemData,
                 foodBuffs: this.foodBuffs,
             };
             localStorage.setItem('keisan-quest-inventory', JSON.stringify(data));
@@ -156,6 +185,7 @@ class Inventory {
                 this.equippedArmor = data.equippedArmor || null;
                 this.ownedItems = data.ownedItems || [];
                 this.foodItems = data.foodItems || {};
+                this.cookedItemData = data.cookedItemData || {};
                 this.foodBuffs = data.foodBuffs || { hpBonus: 0, attackBonus: 0 };
             }
         } catch (e) { }
@@ -167,6 +197,7 @@ class Inventory {
         this.equippedArmor = null;
         this.ownedItems = [];
         this.foodItems = {};
+        this.cookedItemData = {};
         this.foodBuffs = { hpBonus: 0, attackBonus: 0 };
         this.save();
     }
@@ -257,49 +288,7 @@ const RECIPES = [
     },
 ];
 
-// --- Food Recipes ---
-const FOOD_RECIPES = [
-    {
-        id: 'apple',
-        name: 'やきりんご',
-        icon: '🍎',
-        type: 'food',
-        hpBonus: 10,
-        attackBonus: 0,
-        cost: { wood: 2 },
-        description: 'HP +10',
-    },
-    {
-        id: 'steak',
-        name: 'やきにく',
-        icon: '🍖',
-        type: 'food',
-        hpBonus: 20,
-        attackBonus: 0,
-        cost: { wood: 3, stone: 1 },
-        description: 'HP +20',
-    },
-    {
-        id: 'golden_apple',
-        name: 'きんのりんご',
-        icon: '🍏',
-        type: 'food',
-        hpBonus: 15,
-        attackBonus: 3,
-        cost: { wood: 2, gold: 1 },
-        description: 'HP +15, こうげき +3',
-    },
-    {
-        id: 'cake',
-        name: 'スペシャルケーキ',
-        icon: '🍰',
-        type: 'food',
-        hpBonus: 30,
-        attackBonus: 5,
-        cost: { wood: 5, gold: 2 },
-        description: 'HP +30, こうげき +5',
-    },
-];
+
 
 // --- Block Types for Mining ---
 const BLOCK_TYPES = [

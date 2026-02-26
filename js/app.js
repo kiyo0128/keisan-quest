@@ -30,10 +30,8 @@ class GameApp {
             battle: document.getElementById('battle-screen'),
             mining: document.getElementById('mining-screen'),
             crafting: document.getElementById('crafting-screen'),
-            cooking: document.getElementById('cooking-screen'),
             result: document.getElementById('result-screen'),
             miningResult: document.getElementById('mining-result-screen'),
-            cookingResult: document.getElementById('cooking-result-screen'),
             map: document.getElementById('map-screen'),
         };
 
@@ -153,7 +151,7 @@ class GameApp {
                 if (e.key >= '0' && e.key <= '9') this.mining.handleInput(e.key);
                 else if (e.key === 'Backspace') { e.preventDefault(); this.mining.handleDelete(); }
                 else if (e.key === 'Enter') { e.preventDefault(); this.mining.handleSubmit(); }
-            } else if (this.currentScreen === 'cooking') {
+            } else if (this.currentScreen === 'crafting' && this.cooking.cookingActive) {
                 if (e.key === ' ' || e.key === 'Enter') {
                     e.preventDefault();
                     this.cooking.onTap();
@@ -198,6 +196,12 @@ class GameApp {
                     document.getElementById('crafting-title').textContent = '🔨 クラフト';
                 } else {
                     document.getElementById('crafting-title').textContent = '🍳 りょうり';
+                    // Cancel any active cooking when switching tabs
+                    if (this.cooking.cookingActive) {
+                        this.cooking.cancel();
+                    }
+                    document.getElementById('cooking-result-overlay').style.display = 'none';
+                    this.renderFoodRecipes();
                 }
             });
         });
@@ -222,23 +226,14 @@ class GameApp {
             this.goToHub();
         });
 
-        // --- Cooking ---
-        document.getElementById('btn-hub-cooking').addEventListener('click', () => {
-            this.sound.playButtonPress();
-            this.startCooking();
-        });
+        // --- Cooking (within crafting screen) ---
         document.getElementById('cooking-tap-btn').addEventListener('click', () => {
             this.cooking.onTap();
         });
-        document.getElementById('btn-cooking-quit').addEventListener('click', () => {
+        document.getElementById('btn-cooking-result-ok').addEventListener('click', () => {
             this.sound.playButtonPress();
-            this.cooking.stopOscillation();
-            this.cooking.cookingActive = false;
-            this.goToHub();
-        });
-        document.getElementById('btn-cooking-result-back').addEventListener('click', () => {
-            this.sound.playButtonPress();
-            this.goToHub();
+            document.getElementById('cooking-result-overlay').style.display = 'none';
+            this.renderCraftingScreen();
         });
     }
 
@@ -256,8 +251,6 @@ class GameApp {
         else if (name === 'map') this.effects.createStars('map-stars');
         else if (name === 'crafting') this.effects.createStars('crafting-stars');
         else if (name === 'miningResult') this.effects.createStars('mining-result-stars');
-        else if (name === 'cooking') this.effects.createStars('cooking-stars');
-        else if (name === 'cookingResult') this.effects.createStars('cooking-result-stars');
     }
 
     // --- Game Flow ---
@@ -278,6 +271,12 @@ class GameApp {
     }
 
     goToHub() {
+        // Cancel active cooking if leaving crafting
+        if (this.cooking.cookingActive) {
+            this.cooking.cancel();
+        }
+        document.getElementById('cooking-result-overlay').style.display = 'none';
+
         // Show pending story dialogues from victory
         if (this._pendingClearDialogue) {
             const key = this._pendingClearDialogue;
@@ -561,18 +560,17 @@ class GameApp {
         this.sound.playVictory();
     }
 
-    // --- Cooking ---
+    // --- Cooking (integrated into crafting) ---
 
-    startCooking() {
-        this.showScreen('cooking');
-        this.cooking.showRecipeScreen();
+    startCookingMinigame(recipe) {
+        this.cooking.startCooking(recipe);
     }
 
     onCookingComplete(data) {
         this.saveProgress();
         const item = data.item;
 
-        // Result screen
+        // Show inline result overlay within crafting screen
         document.getElementById('cooking-result-icon').textContent = item.icon;
         document.getElementById('cooking-result-title').textContent = item.quality;
         document.getElementById('cooking-result-title').className = `result-title ${item.stars >= 2 ? 'victory' : 'defeat'}`;
@@ -586,9 +584,12 @@ class GameApp {
         }
         document.getElementById('cooking-result-effect').textContent = effectText;
 
-        this.showScreen('cookingResult');
+        document.getElementById('cooking-result-overlay').style.display = '';
         this.sound.playVictory();
         if (item.stars >= 3) this.effects.victoryCelebration();
+
+        // Update inventory bar
+        this.renderInventoryBar(document.getElementById('crafting-inv'));
     }
 
     // --- Crafting ---
@@ -660,6 +661,7 @@ class GameApp {
     renderFoodRecipes() {
         const foodContainer = document.getElementById('food-recipes');
         foodContainer.innerHTML = '';
+        foodContainer.style.display = '';
 
         // Show current buff status
         const buffStatus = document.getElementById('food-buff-status');
@@ -675,12 +677,56 @@ class GameApp {
             buffStatus.style.display = 'none';
         }
 
-        FOOD_RECIPES.forEach(recipe => {
-            const owned = this.inventory.getFoodCount(recipe.id);
-            const canCraft = this.inventory.hasResources(recipe.cost);
+        // --- Owned food items (can eat) ---
+        const ownedRecipeIds = Object.keys(this.inventory.foodItems).filter(id => this.inventory.getFoodCount(id) > 0);
+        if (ownedRecipeIds.length > 0) {
+            const ownedHeader = document.createElement('div');
+            ownedHeader.className = 'food-section-header';
+            ownedHeader.textContent = '🍽️ もちもの';
+            foodContainer.appendChild(ownedHeader);
+
+            ownedRecipeIds.forEach(recipeId => {
+                const count = this.inventory.getFoodCount(recipeId);
+                const itemData = this.inventory.getCookedItemData(recipeId);
+                if (!itemData) return;
+
+                const card = document.createElement('div');
+                card.className = 'recipe-card craftable';
+
+                let desc = `HP +${itemData.heal} かいふく`;
+                if (itemData.buff && itemData.buff.attack) desc += ` / こうげき +${itemData.buff.attack}`;
+
+                card.innerHTML = `
+            <div class="recipe-icon">${itemData.icon}</div>
+            <div class="recipe-info">
+              <div class="recipe-name">${itemData.name} <span class="food-count">×${count}</span></div>
+              <div class="recipe-desc">${desc}</div>
+              <div class="recipe-cost">${'⭐'.repeat(itemData.stars || 1)}</div>
+            </div>
+            <div class="recipe-action recipe-action--food">
+              <button class="craft-btn craft-btn--eat">たべる</button>
+            </div>
+          `;
+
+                card.querySelector('.craft-btn--eat').addEventListener('click', () => {
+                    this.eatFood(recipeId);
+                });
+
+                foodContainer.appendChild(card);
+            });
+        }
+
+        // --- Cooking recipes (can cook via minigame) ---
+        const cookHeader = document.createElement('div');
+        cookHeader.className = 'food-section-header';
+        cookHeader.textContent = '🍳 つくる';
+        foodContainer.appendChild(cookHeader);
+
+        COOKING_RECIPES.forEach(recipe => {
+            const canCook = this.inventory.hasResources(recipe.cost);
 
             const card = document.createElement('div');
-            card.className = `recipe-card ${canCraft ? 'craftable' : ''}`;
+            card.className = `recipe-card ${canCook ? 'craftable' : ''}`;
 
             const costHtml = Object.entries(recipe.cost).map(([type, amount]) => {
                 const info = RESOURCE_INFO[type];
@@ -691,27 +737,20 @@ class GameApp {
             card.innerHTML = `
         <div class="recipe-icon">${recipe.icon}</div>
         <div class="recipe-info">
-          <div class="recipe-name">${recipe.name}${owned > 0 ? ` <span class="food-count">×${owned}</span>` : ''}</div>
+          <div class="recipe-name">${recipe.name}</div>
           <div class="recipe-desc">${recipe.description}</div>
           <div class="recipe-cost">${costHtml}</div>
         </div>
         <div class="recipe-action recipe-action--food">
-          <button class="craft-btn craft-btn--cook" ${canCraft ? '' : 'disabled'}>つくる</button>
-          ${owned > 0 ? '<button class="craft-btn craft-btn--eat">たべる</button>' : ''}
+          <button class="craft-btn craft-btn--cook" ${canCook ? '' : 'disabled'}>つくる</button>
+          <span class="recipe-difficulty">${'⏱️'.repeat(recipe.attempts)}</span>
         </div>
       `;
 
-            const cookBtn = card.querySelector('.craft-btn--cook');
-            if (canCraft) {
-                cookBtn.addEventListener('click', () => {
-                    this.craftFood(recipe);
-                });
-            }
-
-            const eatBtn = card.querySelector('.craft-btn--eat');
-            if (eatBtn && owned > 0) {
-                eatBtn.addEventListener('click', () => {
-                    this.eatFood(recipe);
+            if (canCook) {
+                card.querySelector('.craft-btn--cook').addEventListener('click', () => {
+                    this.sound.playButtonPress();
+                    this.startCookingMinigame(recipe);
                 });
             }
 
@@ -727,15 +766,8 @@ class GameApp {
         }
     }
 
-    craftFood(recipe) {
-        if (this.inventory.craft(recipe)) {
-            this.sound.playCorrect();
-            this.renderCraftingScreen();
-        }
-    }
-
-    eatFood(recipe) {
-        if (this.inventory.useFood(recipe)) {
+    eatFood(recipeId) {
+        if (this.inventory.useFood(recipeId)) {
             this.sound.playLevelUp();
             this.effects.victoryCelebration();
             this.renderCraftingScreen();

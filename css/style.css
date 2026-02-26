@@ -2051,6 +2051,10 @@ body {
   padding-right: 4px;
 }
 
+#crafting-tab-food {
+  position: relative;
+}
+
 .recipe-card {
   display: flex;
   align-items: center;
@@ -2623,4 +2627,67 @@ body {
   text-align: center;
   padding-top: 10px;
   flex-shrink: 0;
+}
+
+/* ============================================
+   COOKING RESULT OVERLAY (within crafting screen)
+   ============================================ */
+
+.cooking-result-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  animation: fadeIn 0.3s ease;
+}
+
+.cooking-result-card {
+  background: var(--bg-panel);
+  border: 3px solid rgba(255, 152, 0, 0.5);
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: center;
+  max-width: 320px;
+  width: 90%;
+  box-shadow: 0 0 40px rgba(255, 152, 0, 0.2);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ============================================
+   FOOD SECTION HEADERS
+   ============================================ */
+
+.food-section-header {
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--gold);
+  padding: 10px 0 4px;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+  margin-bottom: 4px;
+}
+
+.recipe-difficulty {
+  font-size: 0.65rem;
+  display: block;
+  margin-top: 4px;
+  color: var(--text-dim);
+}
+
+.food-count {
+  color: var(--accent-green);
+  font-size: 0.85rem;
 }
