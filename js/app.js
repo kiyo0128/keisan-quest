@@ -169,6 +169,23 @@ class GameApp {
             this.goToHub();
         });
 
+        // --- Crafting Tabs ---
+        document.querySelectorAll('.craft-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                this.sound.playButtonPress();
+                document.querySelectorAll('.craft-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const tabName = tab.dataset.tab;
+                document.getElementById('crafting-tab-equip').style.display = tabName === 'equip' ? '' : 'none';
+                document.getElementById('crafting-tab-food').style.display = tabName === 'food' ? '' : 'none';
+                if (tabName === 'equip') {
+                    document.getElementById('crafting-title').textContent = '🔨 クラフト';
+                } else {
+                    document.getElementById('crafting-title').textContent = '🍳 りょうり';
+                }
+            });
+        });
+
         // --- Mining Quit (途中でやめる) ---
         document.getElementById('btn-mining-quit').addEventListener('click', () => {
             this.sound.playButtonPress();
@@ -290,6 +307,19 @@ class GameApp {
         // Inventory bar
         this.renderInventoryBar(document.getElementById('hub-inventory'));
 
+        // Food buff status
+        const buffs = this.inventory.getFoodBuffs();
+        const buffEl = document.getElementById('hub-food-buff');
+        if (buffs.hpBonus > 0 || buffs.attackBonus > 0) {
+            let buffText = '🍽️ バフ: ';
+            if (buffs.hpBonus > 0) buffText += `HP +${buffs.hpBonus} `;
+            if (buffs.attackBonus > 0) buffText += `こうげき +${buffs.attackBonus}`;
+            buffEl.textContent = buffText;
+            buffEl.style.display = '';
+        } else {
+            buffEl.style.display = 'none';
+        }
+
         // Quest banner
         const quest = getCurrentQuest(this.currentStage);
         const banner = document.getElementById('hub-quest-banner');
@@ -328,9 +358,14 @@ class GameApp {
     }
 
     _launchBattle() {
-        // Apply equipment bonuses
+        // Apply equipment + food bonuses
         const hpBonus = this.inventory.getHpBonus();
-        this.battle.playerMaxHp = 100 + hpBonus;
+        const foodBuffs = this.inventory.getFoodBuffs();
+        this.battle.playerMaxHp = 100 + hpBonus + foodBuffs.hpBonus;
+        this.battle.foodAttackBonus = foodBuffs.attackBonus;
+
+        // Clear food buffs (one-time use)
+        this.inventory.clearFoodBuffs();
 
         this.showScreen('battle');
         this.battle.score = 0;
@@ -339,7 +374,11 @@ class GameApp {
 
     retryStage() {
         const hpBonus = this.inventory.getHpBonus();
-        this.battle.playerMaxHp = 100 + hpBonus;
+        const foodBuffs = this.inventory.getFoodBuffs();
+        this.battle.playerMaxHp = 100 + hpBonus + foodBuffs.hpBonus;
+        this.battle.foodAttackBonus = foodBuffs.attackBonus;
+        this.inventory.clearFoodBuffs();
+
         this.battle.score = Math.max(0, this.battle.score - 200);
         this.showScreen('battle');
         this.battle.startBattle(this.currentStage);
@@ -490,7 +529,7 @@ class GameApp {
             ? `🛡️ ${armor.name}`
             : '🛡️ なし';
 
-        // Recipes
+        // Equipment Recipes
         const container = document.getElementById('crafting-recipes');
         container.innerHTML = '';
 
@@ -530,6 +569,71 @@ class GameApp {
 
             container.appendChild(card);
         });
+
+        // Food Recipes
+        this.renderFoodRecipes();
+    }
+
+    renderFoodRecipes() {
+        const foodContainer = document.getElementById('food-recipes');
+        foodContainer.innerHTML = '';
+
+        // Show current buff status
+        const buffStatus = document.getElementById('food-buff-status');
+        const buffs = this.inventory.getFoodBuffs();
+        if (buffs.hpBonus > 0 || buffs.attackBonus > 0) {
+            let buffText = '🍽️ つぎのバトルのバフ: ';
+            if (buffs.hpBonus > 0) buffText += `HP +${buffs.hpBonus} `;
+            if (buffs.attackBonus > 0) buffText += `こうげき +${buffs.attackBonus}`;
+            buffStatus.textContent = buffText;
+            buffStatus.style.display = '';
+        } else {
+            buffStatus.textContent = '';
+            buffStatus.style.display = 'none';
+        }
+
+        FOOD_RECIPES.forEach(recipe => {
+            const owned = this.inventory.getFoodCount(recipe.id);
+            const canCraft = this.inventory.hasResources(recipe.cost);
+
+            const card = document.createElement('div');
+            card.className = `recipe-card ${canCraft ? 'craftable' : ''}`;
+
+            const costHtml = Object.entries(recipe.cost).map(([type, amount]) => {
+                const info = RESOURCE_INFO[type];
+                const has = this.inventory.resources[type] >= amount;
+                return `<span class="cost-item ${has ? 'has' : 'missing'}">${info.icon}×${amount}</span>`;
+            }).join('');
+
+            card.innerHTML = `
+        <div class="recipe-icon">${recipe.icon}</div>
+        <div class="recipe-info">
+          <div class="recipe-name">${recipe.name}${owned > 0 ? ` <span class="food-count">×${owned}</span>` : ''}</div>
+          <div class="recipe-desc">${recipe.description}</div>
+          <div class="recipe-cost">${costHtml}</div>
+        </div>
+        <div class="recipe-action recipe-action--food">
+          <button class="craft-btn craft-btn--cook" ${canCraft ? '' : 'disabled'}>つくる</button>
+          ${owned > 0 ? '<button class="craft-btn craft-btn--eat">たべる</button>' : ''}
+        </div>
+      `;
+
+            const cookBtn = card.querySelector('.craft-btn--cook');
+            if (canCraft) {
+                cookBtn.addEventListener('click', () => {
+                    this.craftFood(recipe);
+                });
+            }
+
+            const eatBtn = card.querySelector('.craft-btn--eat');
+            if (eatBtn && owned > 0) {
+                eatBtn.addEventListener('click', () => {
+                    this.eatFood(recipe);
+                });
+            }
+
+            foodContainer.appendChild(card);
+        });
     }
 
     craftItem(recipe) {
@@ -537,6 +641,21 @@ class GameApp {
             this.sound.playLevelUp();
             this.effects.victoryCelebration();
             this.renderCraftingScreen(); // Re-render
+        }
+    }
+
+    craftFood(recipe) {
+        if (this.inventory.craft(recipe)) {
+            this.sound.playCorrect();
+            this.renderCraftingScreen();
+        }
+    }
+
+    eatFood(recipe) {
+        if (this.inventory.useFood(recipe)) {
+            this.sound.playLevelUp();
+            this.effects.victoryCelebration();
+            this.renderCraftingScreen();
         }
     }
 
