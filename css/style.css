@@ -2500,6 +2500,8 @@ body {
 
 .map-world {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -2620,4 +2622,5 @@ body {
 .map-footer {
   text-align: center;
   padding-top: 10px;
+  flex-shrink: 0;
 }
