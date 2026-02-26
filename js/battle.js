@@ -22,9 +22,9 @@ class BattleSystem {
         this.battleActive = false;
 
         // Timer state
-        this.timerDuration = 15; // seconds
-        this.timerRemaining = 0;
-        this.timerAnimFrame = null;
+        this.timerDuration = 15;
+        this.timerRemaining = 15;
+        this.timerAnimId = null;
         this.timerStartTime = 0;
 
         // Callbacks
@@ -53,9 +53,9 @@ class BattleSystem {
             messageOverlay: document.getElementById('message-overlay'),
             messageText: document.getElementById('message-text'),
             problemSection: document.getElementById('problem-section'),
-            timerBarContainer: document.getElementById('timer-bar-container'),
-            timerBarFill: document.getElementById('timer-bar-fill'),
-            timerBarText: document.getElementById('timer-bar-text'),
+            timerBar: document.getElementById('battle-timer'),
+            timerFill: document.getElementById('battle-timer-fill'),
+            timerText: document.getElementById('battle-timer-text'),
         };
     }
 
@@ -71,8 +71,8 @@ class BattleSystem {
         this.inputValue = '';
         this.isProcessing = false;
         this.battleActive = true;
-        this.timerDuration = getTimeLimit(stageIndex);
         this.math.resetStage();
+        this.timerDuration = this.getTimerDuration(stageIndex);
 
         // Update UI
         const area = getArea(stageIndex);
@@ -143,7 +143,6 @@ class BattleSystem {
     handleSubmit() {
         if (this.isProcessing || !this.battleActive || this.inputValue === '') return;
         this.isProcessing = true;
-        this.stopTimer();
 
         const userAnswer = parseInt(this.inputValue, 10);
         const result = this.math.checkAnswer(userAnswer, this.currentProblem.answer);
@@ -159,6 +158,7 @@ class BattleSystem {
      * Handle correct answer.
      */
     onCorrectAnswer(result) {
+        this.stopTimer();
         const combo = result.combo;
         const equipBonus = window.game ? window.game.inventory.getAttackBonus() : 0;
         const damage = PLAYER_ATTACK_BASE + equipBonus + (combo * COMBO_BONUS);
@@ -235,6 +235,7 @@ class BattleSystem {
      * Handle wrong answer.
      */
     onWrongAnswer(result) {
+        this.stopTimer();
         const damage = this.monster.attack;
 
         // Sound + visual
@@ -276,8 +277,8 @@ class BattleSystem {
      * Monster defeated.
      */
     onMonsterDefeated() {
-        this.battleActive = false;
         this.stopTimer();
+        this.battleActive = false;
         this.sound.playMonsterDefeat();
 
         // Monster death animation
@@ -308,8 +309,8 @@ class BattleSystem {
      * Player defeated.
      */
     onPlayerDefeated() {
-        this.battleActive = false;
         this.stopTimer();
+        this.battleActive = false;
         this.sound.playDefeat();
 
         this.showMessage('やられた…😵', 'wrong');
@@ -376,93 +377,83 @@ class BattleSystem {
 
     // --- Timer ---
 
+    getTimerDuration(stageIndex) {
+        if (stageIndex < 6) return 15;
+        if (stageIndex < 12) return 12;
+        if (stageIndex < 15) return 10;
+        return 8;
+    }
+
     startTimer() {
         this.stopTimer();
-        this.timerStartTime = performance.now();
         this.timerRemaining = this.timerDuration;
+        this.timerStartTime = performance.now();
 
-        // Reset bar appearance
-        this.els.timerBarFill.style.width = '100%';
-        this.els.timerBarFill.classList.remove('timer-warning', 'timer-danger');
-        this.els.timerBarText.textContent = `⏱️ ${this.timerDuration}`;
+        // Reset UI
+        this.els.timerFill.style.width = '100%';
+        this.els.timerFill.classList.remove('urgent');
+        this.els.timerText.textContent = this.timerDuration;
+        this.els.timerBar.classList.add('active');
 
-        // Use requestAnimationFrame for smooth bar animation
-        const updateTimer = () => {
-            if (!this.battleActive || this.isProcessing) return;
-
-            const elapsed = (performance.now() - this.timerStartTime) / 1000;
+        const tick = (now) => {
+            const elapsed = (now - this.timerStartTime) / 1000;
             this.timerRemaining = Math.max(0, this.timerDuration - elapsed);
-
             const percent = (this.timerRemaining / this.timerDuration) * 100;
-            this.els.timerBarFill.style.width = `${percent}%`;
-            this.els.timerBarText.textContent = `⏱️ ${Math.ceil(this.timerRemaining)}`;
 
-            // Color changes based on remaining time
-            if (this.timerRemaining <= this.timerDuration * 0.25) {
-                this.els.timerBarFill.classList.remove('timer-warning');
-                this.els.timerBarFill.classList.add('timer-danger');
-            } else if (this.timerRemaining <= this.timerDuration * 0.5) {
-                this.els.timerBarFill.classList.add('timer-warning');
-                this.els.timerBarFill.classList.remove('timer-danger');
+            this.els.timerFill.style.width = `${percent}%`;
+            this.els.timerText.textContent = Math.ceil(this.timerRemaining);
+
+            // Urgent warning at 3 seconds
+            if (this.timerRemaining <= 3) {
+                this.els.timerFill.classList.add('urgent');
+            } else {
+                this.els.timerFill.classList.remove('urgent');
             }
 
             if (this.timerRemaining <= 0) {
-                this.onTimeUp();
+                this.onTimeout();
                 return;
             }
 
-            this.timerAnimFrame = requestAnimationFrame(updateTimer);
+            this.timerAnimId = requestAnimationFrame(tick);
         };
 
-        this.timerAnimFrame = requestAnimationFrame(updateTimer);
+        this.timerAnimId = requestAnimationFrame(tick);
     }
 
     stopTimer() {
-        if (this.timerAnimFrame) {
-            cancelAnimationFrame(this.timerAnimFrame);
-            this.timerAnimFrame = null;
+        if (this.timerAnimId) {
+            cancelAnimationFrame(this.timerAnimId);
+            this.timerAnimId = null;
         }
     }
 
-    onTimeUp() {
-        if (this.isProcessing || !this.battleActive) return;
-        this.isProcessing = true;
+    onTimeout() {
         this.stopTimer();
+        if (!this.battleActive || this.isProcessing) return;
+        this.isProcessing = true;
 
-        // Time's up = monster attacks (same as wrong answer but with unique message)
+        // Treat as wrong answer
         const damage = this.monster.attack;
 
         this.sound.playWrong();
-
-        // Show correct answer
         this.els.answerDisplay.textContent = this.currentProblem.answer;
         this.els.answerDisplay.style.color = '#f44336';
 
-        // Show time-up message
-        const messages = ['じかんぎれ！⏱️💥', 'おそすぎた！💦', 'まにあわなかった！⏱️'];
-        this.showMessage(messages[Math.floor(Math.random() * messages.length)], 'wrong');
-
-        // Effects
+        this.showMessage('⏰ じかんぎれ！', 'wrong');
         this.effects.wrongEffect();
         this.effects.showDamageNumber(this.els.playerContainer, damage, false);
-
-        // Register as wrong answer in math engine
-        this.math.checkAnswer(-1, this.currentProblem.answer);
-
-        // Reset combo
         this.updateCombo(0);
+        this.math.resetCombo();
 
-        // Apply damage to player
         this.playerHp = Math.max(0, this.playerHp - damage);
         this.updateHpBars();
 
-        // Check player defeated
         if (this.playerHp <= 0) {
             this.onPlayerDefeated();
             return;
         }
 
-        // Next problem after delay
         setTimeout(() => {
             this.isProcessing = false;
             this.nextProblem();

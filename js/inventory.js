@@ -20,6 +20,9 @@ class Inventory {
         // Crafted items owned
         this.ownedItems = [];
 
+        // Cooked food items
+        this.cookedItems = [];
+
         this.load();
     }
 
@@ -90,6 +93,20 @@ class Inventory {
         return this.ownedItems.includes(recipeId);
     }
 
+    // --- Cooking ---
+
+    addCookedItem(item) {
+        this.cookedItems.push(item);
+        this.save();
+    }
+
+    useCookedItem(index) {
+        if (index < 0 || index >= this.cookedItems.length) return null;
+        const item = this.cookedItems.splice(index, 1)[0];
+        this.save();
+        return item;
+    }
+
     // --- Save/Load ---
 
     save() {
@@ -99,6 +116,7 @@ class Inventory {
                 equippedWeapon: this.equippedWeapon,
                 equippedArmor: this.equippedArmor,
                 ownedItems: this.ownedItems,
+                cookedItems: this.cookedItems,
             };
             localStorage.setItem('keisan-quest-inventory', JSON.stringify(data));
         } catch (e) { }
@@ -113,6 +131,7 @@ class Inventory {
                 this.equippedWeapon = data.equippedWeapon || null;
                 this.equippedArmor = data.equippedArmor || null;
                 this.ownedItems = data.ownedItems || [];
+                this.cookedItems = data.cookedItems || [];
             }
         } catch (e) { }
     }
@@ -122,6 +141,7 @@ class Inventory {
         this.equippedWeapon = null;
         this.equippedArmor = null;
         this.ownedItems = [];
+        this.cookedItems = [];
         this.save();
     }
 }
