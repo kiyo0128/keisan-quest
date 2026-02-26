@@ -10,7 +10,7 @@ const COOKING_RECIPES = [
         icon: '🍠',
         cost: { wood: 2 },
         attempts: 3,
-        speed: 2.0,
+        speed: 1.2,
         targetWidth: 30,
         heal: { base: 20, star3: 40 },
         description: 'HP +20〜40',
@@ -21,7 +21,7 @@ const COOKING_RECIPES = [
         icon: '🥩',
         cost: { stone: 3, wood: 1 },
         attempts: 4,
-        speed: 2.5,
+        speed: 1.5,
         targetWidth: 25,
         heal: { base: 35, star3: 60 },
         description: 'HP +35〜60',
@@ -32,7 +32,7 @@ const COOKING_RECIPES = [
         icon: '🍲',
         cost: { gold: 2, stone: 1 },
         attempts: 4,
-        speed: 3.0,
+        speed: 1.8,
         targetWidth: 22,
         heal: { base: 50, star3: 80 },
         description: 'HP +50〜80',
@@ -43,7 +43,7 @@ const COOKING_RECIPES = [
         icon: '✨',
         cost: { diamond: 1, gold: 2, iron: 1 },
         attempts: 5,
-        speed: 3.5,
+        speed: 2.2,
         targetWidth: 18,
         heal: { base: 70, star3: 120 },
         buff: { attack: 5 },
@@ -250,7 +250,7 @@ class CookingSystem {
                 this.evaluateResult();
             } else {
                 // Increase speed slightly each attempt
-                this.markerSpeed += 0.3;
+                this.markerSpeed += 0.15;
                 this.startOscillation();
             }
         }, 800);
