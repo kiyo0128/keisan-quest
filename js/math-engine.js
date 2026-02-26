@@ -137,6 +137,13 @@ class MathEngine {
     }
 
     /**
+     * Reset combo counter (e.g. on timeout).
+     */
+    resetCombo() {
+        this.consecutiveCorrect = 0;
+    }
+
+    /**
      * Full reset for new game.
      */
     resetAll() {

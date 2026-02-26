@@ -45,18 +45,65 @@ const STORY_DIALOGUES = {
 
     // Area 2: Volcano
     area2_enter: [
-        { speaker: '🔥', name: 'ほのおのせい', text: 'ここは火山エリア…さいごのたたかいだ。' },
-        { speaker: '🔥', name: 'ほのおのせい', text: 'ドラゴンをたおせば、へいわがもどる！' },
+        { speaker: '🔥', name: 'ほのおのせい', text: 'ここは火山エリア…あついたたかいだ。' },
+        { speaker: '🔥', name: 'ほのおのせい', text: 'ドラゴンをたおして、つぎのエリアへすすめ！' },
         { speaker: '🧑‍🦰', name: 'ゆうしゃ', text: 'ぜったい、まけない！' },
     ],
     area2_boss: [
         { speaker: '🔥', name: 'ほのおのせい', text: 'ドラゴンだ！ぜんりょくでいけ！！' },
     ],
     area2_clear: [
-        { speaker: '👴', name: 'そんちょう', text: '🎊 おめでとう！ドラゴンをたおした！！' },
-        { speaker: '👴', name: 'そんちょう', text: 'ブロックワールドにへいわがもどったぞ！' },
-        { speaker: '🧚', name: 'ようせい', text: 'ゆうしゃさん、ありがとう！きみはほんとうのゆうしゃだ！' },
-        { speaker: '🧑‍🦰', name: 'ゆうしゃ', text: 'やったー！！けいさんのちからで かった！' },
+        { speaker: '👴', name: 'そんちょう', text: 'ドラゴンをたおしたぞ！すごいな！' },
+        { speaker: '👴', name: 'そんちょう', text: 'しかし…まだへいわはもどっていない。あたらしいまものがあらわれた！' },
+        { speaker: '🧚', name: 'ようせい', text: '砂漠エリアにつよいまものたちがいるよ！' },
+        { speaker: '🧑‍🦰', name: 'ゆうしゃ', text: 'まだまだ ぼうけんはおわらないぞ！' },
+    ],
+
+    // Area 3: Desert
+    area3_enter: [
+        { speaker: '🏜️', name: 'すなのせい', text: 'ようこそ、砂漠エリアへ。あついぞ！' },
+        { speaker: '🏜️', name: 'すなのせい', text: 'ここのまものはとてもつよい。きをつけろ！' },
+        { speaker: '🧑‍🦰', name: 'ゆうしゃ', text: 'あつくても、がんばる！' },
+    ],
+    area3_boss: [
+        { speaker: '🏜️', name: 'すなのせい', text: 'スフィンクスだ！なぞをとけ！' },
+        { speaker: '🏜️', name: 'すなのせい', text: 'けいさんでこたえれば、かてるぞ！' },
+    ],
+    area3_clear: [
+        { speaker: '👴', name: 'そんちょう', text: 'すごい！砂漠エリアもクリアだ！' },
+        { speaker: '👴', name: 'そんちょう', text: 'つぎは氷の洞窟エリアだ。さむいぞ、きをつけろ！' },
+    ],
+
+    // Area 4: Ice Cavern
+    area4_enter: [
+        { speaker: '🧊', name: 'こおりのせい', text: 'ここは氷の洞窟エリア…さむいぞ。' },
+        { speaker: '🧊', name: 'こおりのせい', text: 'こおりのまものたちが きみをまっている！' },
+        { speaker: '🧑‍🦰', name: 'ゆうしゃ', text: 'さむくても、まけないぞ！' },
+    ],
+    area4_boss: [
+        { speaker: '🧊', name: 'こおりのせい', text: 'フロストドラゴンだ！こおりのブレスに きをつけろ！' },
+    ],
+    area4_clear: [
+        { speaker: '👴', name: 'そんちょう', text: 'やったな！氷の洞窟をクリアだ！' },
+        { speaker: '👴', name: 'そんちょう', text: 'さいごは闇の城…まおうがまっているぞ！' },
+        { speaker: '🧑‍🦰', name: 'ゆうしゃ', text: 'いよいよ さいしゅうけっせんだ！' },
+    ],
+
+    // Area 5: Dark Castle
+    area5_enter: [
+        { speaker: '🏰', name: 'やみのせい', text: 'ここは闇の城…さいごのたたかいだ。' },
+        { speaker: '🏰', name: 'やみのせい', text: 'まおうをたおせば、ほんとうのへいわがもどる！' },
+        { speaker: '🧑‍🦰', name: 'ゆうしゃ', text: 'ぜったい、へいわをとりもどす！' },
+    ],
+    area5_boss: [
+        { speaker: '🏰', name: 'やみのせい', text: 'まおうだ！！さいごのたたかい！！' },
+        { speaker: '🏰', name: 'やみのせい', text: 'けいさんのちからを しんじろ！！' },
+    ],
+    area5_clear: [
+        { speaker: '👴', name: 'そんちょう', text: '🎊 おめでとう！まおうをたおした！！' },
+        { speaker: '👴', name: 'そんちょう', text: 'ブロックワールドにほんとうのへいわがもどったぞ！' },
+        { speaker: '🧚', name: 'ようせい', text: 'ゆうしゃさん、ありがとう！きみはでんせつのゆうしゃだ！' },
+        { speaker: '🧑‍🦰', name: 'ゆうしゃ', text: 'やったー！！けいさんのちからで せかいをすくった！' },
     ],
 };
 
@@ -137,10 +184,91 @@ const QUESTS = [
     {
         id: 'q_volcano_boss',
         area: 2,
-        title: 'さいごのたたかい',
-        description: 'ドラゴンをたおしてへいわをとりもどせ！',
+        title: 'ドラゴンとのたたかい',
+        description: 'ドラゴンをたおしてつぎへすすめ！',
         targetStage: 8,
         icon: '🐉',
+        isBoss: true,
+    },
+
+    // Area 3 quests
+    {
+        id: 'q_desert_1',
+        area: 3,
+        title: 'どくのしっぽ',
+        description: 'サソリをたおそう！',
+        targetStage: 9,
+        icon: '🦂',
+    },
+    {
+        id: 'q_desert_2',
+        area: 3,
+        title: 'いにしえのはか',
+        description: 'ミイラをたおそう！',
+        targetStage: 10,
+        icon: '🧌',
+    },
+    {
+        id: 'q_desert_boss',
+        area: 3,
+        title: '砂漠のボス',
+        description: 'スフィンクスをたおして砂漠をすくえ！',
+        targetStage: 11,
+        icon: '🦁',
+        isBoss: true,
+    },
+
+    // Area 4 quests
+    {
+        id: 'q_ice_1',
+        area: 4,
+        title: 'こおりのばんにん',
+        description: 'アイスゴーレムをたおそう！',
+        targetStage: 12,
+        icon: '🥶',
+    },
+    {
+        id: 'q_ice_2',
+        area: 4,
+        title: 'ふぶきのかげ',
+        description: 'ゆきおんなをたおそう！',
+        targetStage: 13,
+        icon: '👻',
+    },
+    {
+        id: 'q_ice_boss',
+        area: 4,
+        title: '氷のボス',
+        description: 'フロストドラゴンをたおして洞窟をすくえ！',
+        targetStage: 14,
+        icon: '❄️',
+        isBoss: true,
+    },
+
+    // Area 5 quests
+    {
+        id: 'q_dark_1',
+        area: 5,
+        title: 'やみのきし',
+        description: 'ダークナイトをたおそう！',
+        targetStage: 15,
+        icon: '🗡️',
+    },
+    {
+        id: 'q_dark_2',
+        area: 5,
+        title: 'じごくのまもの',
+        description: 'デーモンをたおそう！',
+        targetStage: 16,
+        icon: '👹',
+    },
+    {
+        id: 'q_dark_boss',
+        area: 5,
+        title: 'さいしゅうけっせん',
+        description: 'まおうをたおしてへいわをとりもどせ！',
+        targetStage: 17,
+        icon: '😈',
         isBoss: true,
     },
 ];
@@ -155,7 +283,7 @@ const WORLD_MAP_AREAS = [
         color: '#4caf50',
         bgColor: '#1a3a1a',
         stages: [0, 1, 2],
-        position: { x: 25, y: 70 },
+        position: { x: 15, y: 80 },
     },
     {
         id: 1,
@@ -164,7 +292,7 @@ const WORLD_MAP_AREAS = [
         color: '#78909c',
         bgColor: '#2a2a3a',
         stages: [3, 4, 5],
-        position: { x: 50, y: 40 },
+        position: { x: 30, y: 65 },
     },
     {
         id: 2,
@@ -173,35 +301,72 @@ const WORLD_MAP_AREAS = [
         color: '#e53935',
         bgColor: '#3a1a1a',
         stages: [6, 7, 8],
-        position: { x: 75, y: 15 },
+        position: { x: 45, y: 50 },
+    },
+    {
+        id: 3,
+        name: '砂漠エリア',
+        icon: '🏜️',
+        color: '#d4a437',
+        bgColor: '#3a2a1a',
+        stages: [9, 10, 11],
+        position: { x: 55, y: 38 },
+    },
+    {
+        id: 4,
+        name: '氷の洞窟エリア',
+        icon: '🧊',
+        color: '#29b6f6',
+        bgColor: '#1a2a3a',
+        stages: [12, 13, 14],
+        position: { x: 68, y: 25 },
+    },
+    {
+        id: 5,
+        name: '闇の城エリア',
+        icon: '🏰',
+        color: '#7e57c2',
+        bgColor: '#1a1a2a',
+        stages: [15, 16, 17],
+        position: { x: 82, y: 12 },
     },
 ];
 
+// Number of stages per area (always 3)
+const STAGES_PER_AREA = 3;
+// Total number of areas
+const NUM_AREAS = WORLD_MAP_AREAS.length;
+
 /**
  * Get the story dialogue key for the current game state.
+ * Dynamically computed based on STAGES_PER_AREA.
  */
 function getStoryTrigger(stage, previousStage) {
-    // Area boundaries
-    const areaStarts = [0, 3, 6];
-    const bossStages = [2, 5, 8];
-    const areaClearStages = [3, 6, 9]; // stage AFTER clearing boss
+    const areaIndex = Math.floor(stage / STAGES_PER_AREA);
+    const positionInArea = stage % STAGES_PER_AREA;
 
-    // Just cleared a boss?
-    if (areaClearStages.includes(stage) && previousStage !== undefined) {
-        const clearedArea = areaClearStages.indexOf(stage);
+    // Just cleared a boss? (stage is the first stage of the NEXT area)
+    if (positionInArea === 0 && previousStage !== undefined) {
+        const clearedArea = areaIndex - 1;
+        if (clearedArea >= 0 && clearedArea < NUM_AREAS) {
+            return `area${clearedArea}_clear`;
+        }
+    }
+
+    // Game fully cleared? (stage goes beyond all defined stages)
+    if (stage >= NUM_AREAS * STAGES_PER_AREA && previousStage !== undefined) {
+        const clearedArea = NUM_AREAS - 1;
         return `area${clearedArea}_clear`;
     }
 
-    // Entering new area?
-    if (areaStarts.includes(stage)) {
-        const area = areaStarts.indexOf(stage);
-        return `area${area}_enter`;
+    // Entering a new area? (first stage of an area)
+    if (positionInArea === 0 && areaIndex < NUM_AREAS) {
+        return `area${areaIndex}_enter`;
     }
 
-    // About to face a boss?
-    if (bossStages.includes(stage)) {
-        const area = bossStages.indexOf(stage);
-        return `area${area}_boss`;
+    // About to face a boss? (last stage of an area)
+    if (positionInArea === STAGES_PER_AREA - 1 && areaIndex < NUM_AREAS) {
+        return `area${areaIndex}_boss`;
     }
 
     return null;
