@@ -10,7 +10,7 @@ class GameApp {
         this.sound = new SoundManager();
         this.battle = new BattleSystem(this.mathEngine, this.effects, this.sound);
         this.mining = new MiningSystem(this.mathEngine, this.effects, this.sound, this.inventory);
-        this.cooking = new CookingSystem(this.effects, this.sound, this.inventory);
+        this.cooking = new CookingSystem(this.effects, this.sound);
 
         // Game state
         this.currentScreen = 'title';
@@ -30,10 +30,8 @@ class GameApp {
             battle: document.getElementById('battle-screen'),
             mining: document.getElementById('mining-screen'),
             crafting: document.getElementById('crafting-screen'),
-            cooking: document.getElementById('cooking-screen'),
             result: document.getElementById('result-screen'),
             miningResult: document.getElementById('mining-result-screen'),
-            cookingResult: document.getElementById('cooking-result-screen'),
             map: document.getElementById('map-screen'),
         };
 
@@ -70,7 +68,16 @@ class GameApp {
         this.mining.onComplete = (data) => this.onMiningComplete(data);
 
         // Cooking callbacks
-        this.cooking.onComplete = (data) => this.onCookingComplete(data);
+        this.cooking.onSuccess = (recipe) => {
+            // Resources already consumed in craftFood(), just add the food
+            this.inventory.foodItems[recipe.id] = (this.inventory.foodItems[recipe.id] || 0) + 1;
+            this.inventory.save();
+            this.renderCraftingScreen();
+        };
+        this.cooking.onFail = () => {
+            // Resources were consumed but cooking failed
+            this.renderCraftingScreen();
+        };
 
         this.bindEvents();
     }
@@ -153,7 +160,7 @@ class GameApp {
                 if (e.key >= '0' && e.key <= '9') this.mining.handleInput(e.key);
                 else if (e.key === 'Backspace') { e.preventDefault(); this.mining.handleDelete(); }
                 else if (e.key === 'Enter') { e.preventDefault(); this.mining.handleSubmit(); }
-            } else if (this.currentScreen === 'cooking') {
+            } else if (this.currentScreen === 'crafting' && this.cooking.phase === 'timing') {
                 if (e.key === ' ' || e.key === 'Enter') {
                     e.preventDefault();
                     this.cooking.onTap();
@@ -222,24 +229,6 @@ class GameApp {
             this.goToHub();
         });
 
-        // --- Cooking ---
-        document.getElementById('btn-hub-cooking').addEventListener('click', () => {
-            this.sound.playButtonPress();
-            this.startCooking();
-        });
-        document.getElementById('cooking-tap-btn').addEventListener('click', () => {
-            this.cooking.onTap();
-        });
-        document.getElementById('btn-cooking-quit').addEventListener('click', () => {
-            this.sound.playButtonPress();
-            this.cooking.stopOscillation();
-            this.cooking.cookingActive = false;
-            this.goToHub();
-        });
-        document.getElementById('btn-cooking-result-back').addEventListener('click', () => {
-            this.sound.playButtonPress();
-            this.goToHub();
-        });
     }
 
     // --- Screen Management ---
@@ -256,8 +245,6 @@ class GameApp {
         else if (name === 'map') this.effects.createStars('map-stars');
         else if (name === 'crafting') this.effects.createStars('crafting-stars');
         else if (name === 'miningResult') this.effects.createStars('mining-result-stars');
-        else if (name === 'cooking') this.effects.createStars('cooking-stars');
-        else if (name === 'cookingResult') this.effects.createStars('cooking-result-stars');
     }
 
     // --- Game Flow ---
@@ -561,35 +548,6 @@ class GameApp {
         this.sound.playVictory();
     }
 
-    // --- Cooking ---
-
-    startCooking() {
-        this.showScreen('cooking');
-        this.cooking.showRecipeScreen();
-    }
-
-    onCookingComplete(data) {
-        this.saveProgress();
-        const item = data.item;
-
-        // Result screen
-        document.getElementById('cooking-result-icon').textContent = item.icon;
-        document.getElementById('cooking-result-title').textContent = item.quality;
-        document.getElementById('cooking-result-title').className = `result-title ${item.stars >= 2 ? 'victory' : 'defeat'}`;
-        document.getElementById('cooking-result-stars-display').textContent = '⭐'.repeat(item.stars) + '☆'.repeat(3 - item.stars);
-        document.getElementById('cooking-result-item-icon').textContent = item.icon;
-        document.getElementById('cooking-result-item-name').textContent = item.name;
-
-        let effectText = `HP +${item.heal} かいふく`;
-        if (item.buff && item.buff.attack) {
-            effectText += ` / こうげき +${item.buff.attack}`;
-        }
-        document.getElementById('cooking-result-effect').textContent = effectText;
-
-        this.showScreen('cookingResult');
-        this.sound.playVictory();
-        if (item.stars >= 3) this.effects.victoryCelebration();
-    }
 
     // --- Crafting ---
 
@@ -728,10 +686,11 @@ class GameApp {
     }
 
     craftFood(recipe) {
-        if (this.inventory.craft(recipe)) {
-            this.sound.playCorrect();
-            this.renderCraftingScreen();
-        }
+        // Consume resources first, then start mini-game
+        if (!this.inventory.hasResources(recipe.cost)) return;
+        this.inventory.spendResources(recipe.cost);
+        this.renderCraftingScreen();
+        this.cooking.start(recipe);
     }
 
     eatFood(recipe) {

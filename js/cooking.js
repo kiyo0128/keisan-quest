@@ -1,85 +1,38 @@
 /**
- * cooking.js - Cooking mini-game system with timing bar mechanic
+ * cooking.js - Cooking mini-game overlay (timing bar mechanic)
+ *
+ * Triggered from the crafting screen's food tab when "つくる" is clicked.
+ * Resources are consumed first, then the player plays the timing game.
+ * Success (≥1 hit) = food crafted. Fail (0 hits) = resources lost.
  */
 
-// --- Cooking Recipes ---
-const COOKING_RECIPES = [
-    {
-        id: 'yakiimo',
-        name: 'やきいも',
-        icon: '🍠',
-        cost: { wood: 2 },
-        attempts: 3,
-        speed: 1.2,
-        targetWidth: 30,
-        heal: { base: 20, star3: 40 },
-        description: 'HP +20〜40',
-    },
-    {
-        id: 'steak',
-        name: 'いしやきステーキ',
-        icon: '🥩',
-        cost: { stone: 3, wood: 1 },
-        attempts: 4,
-        speed: 1.5,
-        targetWidth: 25,
-        heal: { base: 35, star3: 60 },
-        description: 'HP +35〜60',
-    },
-    {
-        id: 'gold_soup',
-        name: 'きんのスープ',
-        icon: '🍲',
-        cost: { gold: 2, stone: 1 },
-        attempts: 4,
-        speed: 1.8,
-        targetWidth: 22,
-        heal: { base: 50, star3: 80 },
-        description: 'HP +50〜80',
-    },
-    {
-        id: 'diamond_course',
-        name: 'ダイヤのフルコース',
-        icon: '✨',
-        cost: { diamond: 1, gold: 2, iron: 1 },
-        attempts: 5,
-        speed: 2.2,
-        targetWidth: 18,
-        heal: { base: 70, star3: 120 },
-        buff: { attack: 5 },
-        description: 'HP +70〜120, 攻撃+5',
-    },
-];
-
 class CookingSystem {
-    constructor(effects, sound, inventory) {
+    constructor(effects, sound) {
         this.effects = effects;
         this.sound = sound;
-        this.inventory = inventory;
 
         // State
         this.currentRecipe = null;
         this.totalAttempts = 0;
         this.successes = 0;
         this.currentAttempt = 0;
-        this.markerPosition = 0;   // 0 - 100
-        this.markerDirection = 1;   // 1 or -1
+        this.markerPosition = 0;
+        this.markerDirection = 1;
         this.markerSpeed = 2.0;
         this.targetStart = 35;
         this.targetEnd = 65;
         this.isOscillating = false;
         this.animId = null;
         this.lastTimestamp = 0;
-        this.cookingActive = false;
-        this.phase = 'recipe';     // 'recipe' | 'timing' | 'done'
+        this.phase = 'idle'; // 'idle' | 'timing' | 'done'
 
         // Callbacks
-        this.onComplete = null;
+        this.onSuccess = null;  // called with recipe when food is crafted
+        this.onFail = null;     // called with recipe when all misses
 
         // DOM
         this.els = {
-            recipeList: document.getElementById('cooking-recipe-list'),
-            timingArea: document.getElementById('cooking-timing-area'),
+            overlay: document.getElementById('cooking-overlay'),
             timingBar: document.getElementById('timing-bar'),
             timingMarker: document.getElementById('timing-marker'),
             timingTarget: document.getElementById('timing-target'),
@@ -89,66 +42,16 @@ class CookingSystem {
             recipeIcon: document.getElementById('cooking-recipe-icon'),
             messageOverlay: document.getElementById('cooking-message'),
             messageText: document.getElementById('cooking-message-text'),
-            invBar: document.getElementById('cooking-inv-bar'),
         };
+
+        // Bind tap
+        this.els.tapBtn.addEventListener('click', () => this.onTap());
     }
 
     /**
-     * Show recipe selection screen.
+     * Start the mini-game overlay for a recipe.
      */
-    showRecipeScreen() {
-        this.phase = 'recipe';
-        this.cookingActive = true;
-        this.els.timingArea.style.display = 'none';
-        this.els.recipeList.style.display = '';
-        this.renderRecipeList();
-        this.updateInventoryBar();
-    }
-
-    renderRecipeList() {
-        this.els.recipeList.innerHTML = COOKING_RECIPES.map((recipe) => {
-            const canCook = this.inventory.hasResources(recipe.cost);
-            const costHtml = Object.entries(recipe.cost).map(([type, amount]) => {
-                const info = RESOURCE_INFO[type];
-                const has = this.inventory.resources[type] || 0;
-                const enough = has >= amount;
-                return `<span class="recipe-cost-item ${enough ? '' : 'insufficient'}">${info.icon}×${amount}</span>`;
-            }).join('');
-
-            return `
-                <div class="cooking-recipe-card ${canCook ? '' : 'disabled'}" data-recipe-id="${recipe.id}">
-                    <div class="recipe-card-icon">${recipe.icon}</div>
-                    <div class="recipe-card-info">
-                        <div class="recipe-card-name">${recipe.name}</div>
-                        <div class="recipe-card-desc">${recipe.description}</div>
-                        <div class="recipe-card-cost">${costHtml}</div>
-                    </div>
-                    <div class="recipe-card-difficulty">
-                        ${'⏱️'.repeat(recipe.attempts)}
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        // Bind click events
-        this.els.recipeList.querySelectorAll('.cooking-recipe-card:not(.disabled)').forEach(card => {
-            card.addEventListener('click', () => {
-                const recipeId = card.dataset.recipeId;
-                const recipe = COOKING_RECIPES.find(r => r.id === recipeId);
-                if (recipe) {
-                    this.sound.playButtonPress();
-                    this.startCooking(recipe);
-                }
-            });
-        });
-    }
-
-    /**
-     * Start timing mini-game for a recipe.
-     */
-    startCooking(recipe) {
-        if (!this.inventory.spendResources(recipe.cost)) return;
-
+    start(recipe) {
         this.currentRecipe = recipe;
         this.totalAttempts = recipe.attempts;
         this.successes = 0;
@@ -156,22 +59,20 @@ class CookingSystem {
         this.markerSpeed = recipe.speed;
         this.phase = 'timing';
 
-        // Calculate target zone
+        // Target zone
         const halfWidth = recipe.targetWidth / 2;
         this.targetStart = 50 - halfWidth;
         this.targetEnd = 50 + halfWidth;
 
-        // Switch UI
-        this.els.recipeList.style.display = 'none';
-        this.els.timingArea.style.display = '';
+        // UI
         this.els.recipeName.textContent = recipe.name;
         this.els.recipeIcon.textContent = recipe.icon;
-
-        // Set target zone visual
         this.els.timingTarget.style.left = `${this.targetStart}%`;
         this.els.timingTarget.style.width = `${recipe.targetWidth}%`;
+        this.els.tapBtn.disabled = false;
 
         this.updateProgress();
+        this.els.overlay.classList.add('active');
         this.startOscillation();
     }
 
@@ -188,10 +89,8 @@ class CookingSystem {
             const dt = (now - this.lastTimestamp) / 1000;
             this.lastTimestamp = now;
 
-            // Move marker
             this.markerPosition += this.markerDirection * this.markerSpeed * dt * 100;
 
-            // Bounce at edges
             if (this.markerPosition >= 100) {
                 this.markerPosition = 100;
                 this.markerDirection = -1;
@@ -200,9 +99,7 @@ class CookingSystem {
                 this.markerDirection = 1;
             }
 
-            // Update visual
             this.els.timingMarker.style.left = `${this.markerPosition}%`;
-
             this.animId = requestAnimationFrame(animate);
         };
 
@@ -217,16 +114,12 @@ class CookingSystem {
         }
     }
 
-    /**
-     * Handle player tap.
-     */
     onTap() {
         if (!this.isOscillating || this.phase !== 'timing') return;
 
         this.stopOscillation();
         this.currentAttempt++;
 
-        // Check if marker is in target zone
         const isHit = this.markerPosition >= this.targetStart && this.markerPosition <= this.targetEnd;
 
         if (isHit) {
@@ -242,71 +135,55 @@ class CookingSystem {
 
         this.updateProgress();
 
-        // Next attempt or finish
+        // Disable tap during transition
+        this.els.tapBtn.disabled = true;
+
         setTimeout(() => {
             this.els.timingMarker.classList.remove('hit', 'miss');
 
             if (this.currentAttempt >= this.totalAttempts) {
-                this.evaluateResult();
+                this.finish();
             } else {
-                // Increase speed slightly each attempt
                 this.markerSpeed += 0.15;
+                this.els.tapBtn.disabled = false;
                 this.startOscillation();
             }
         }, 800);
     }
 
-    evaluateResult() {
+    finish() {
         this.phase = 'done';
-        this.cookingActive = false;
+        this.stopOscillation();
 
-        const ratio = this.successes / this.totalAttempts;
-        let quality, stars, healAmount;
+        const success = this.successes > 0;
 
-        if (ratio >= 1.0) {
-            quality = 'だいせいこう！';
-            stars = 3;
-            healAmount = this.currentRecipe.heal.star3;
-        } else if (ratio >= 0.5) {
-            quality = 'せいこう！';
-            stars = 2;
-            healAmount = Math.floor(
-                this.currentRecipe.heal.base +
-                (this.currentRecipe.heal.star3 - this.currentRecipe.heal.base) * 0.5
-            );
+        if (success) {
+            const ratio = this.successes / this.totalAttempts;
+            const msg = ratio >= 1.0 ? 'かんぺき！🎉' : ratio >= 0.5 ? 'せいこう！✨' : 'ぎりぎりセーフ！';
+            this.showMessage(msg, 'correct');
+            this.sound.playLevelUp();
+            if (ratio >= 1.0) this.effects.victoryCelebration();
         } else {
-            quality = 'しっぱい…';
-            stars = 1;
-            healAmount = this.currentRecipe.heal.base;
+            this.showMessage('しっぱい…😢', 'wrong');
+            this.sound.playDefeat();
         }
 
-        const cookedItem = {
-            recipeId: this.currentRecipe.id,
-            name: this.currentRecipe.name,
-            icon: this.currentRecipe.icon,
-            stars,
-            quality,
-            heal: healAmount,
-            buff: stars >= 3 ? (this.currentRecipe.buff || null) : null,
-        };
+        setTimeout(() => {
+            this.els.overlay.classList.remove('active');
+            this.phase = 'idle';
 
-        // Add to inventory
-        this.inventory.addCookedItem(cookedItem);
-
-        if (this.onComplete) {
-            this.onComplete({
-                item: cookedItem,
-                successes: this.successes,
-                total: this.totalAttempts,
-            });
-        }
+            if (success && this.onSuccess) {
+                this.onSuccess(this.currentRecipe);
+            } else if (!success && this.onFail) {
+                this.onFail(this.currentRecipe);
+            }
+        }, 1200);
     }
 
     updateProgress() {
         let html = '';
         for (let i = 0; i < this.totalAttempts; i++) {
             if (i < this.currentAttempt) {
-                // Completed - check if it was within the attempt results
                 html += '<span class="progress-dot done">●</span>';
             } else if (i === this.currentAttempt) {
                 html += '<span class="progress-dot current">◉</span>';
@@ -315,13 +192,6 @@ class CookingSystem {
             }
         }
         this.els.progress.innerHTML = html;
-    }
-
-    updateInventoryBar() {
-        const inv = this.inventory.resources;
-        this.els.invBar.innerHTML = Object.entries(RESOURCE_INFO).map(([type, info]) => {
-            return `<span class="mining-inv-item"><span class="inv-icon">${info.icon}</span>${inv[type] || 0}</span>`;
-        }).join('');
     }
 
     showMessage(text, type) {

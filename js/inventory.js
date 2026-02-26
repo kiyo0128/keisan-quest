@@ -268,6 +268,9 @@ const FOOD_RECIPES = [
         attackBonus: 0,
         cost: { wood: 2 },
         description: 'HP +10',
+        attempts: 2,
+        speed: 1.2,
+        targetWidth: 32,
     },
     {
         id: 'steak',
@@ -278,6 +281,9 @@ const FOOD_RECIPES = [
         attackBonus: 0,
         cost: { wood: 3, stone: 1 },
         description: 'HP +20',
+        attempts: 3,
+        speed: 1.4,
+        targetWidth: 28,
     },
     {
         id: 'golden_apple',
@@ -288,6 +294,9 @@ const FOOD_RECIPES = [
         attackBonus: 3,
         cost: { wood: 2, gold: 1 },
         description: 'HP +15, こうげき +3',
+        attempts: 3,
+        speed: 1.7,
+        targetWidth: 24,
     },
     {
         id: 'cake',
@@ -298,6 +307,9 @@ const FOOD_RECIPES = [
         attackBonus: 5,
         cost: { wood: 5, gold: 2 },
         description: 'HP +30, こうげき +5',
+        attempts: 4,
+        speed: 2.0,
+        targetWidth: 20,
     },
 ];
 
