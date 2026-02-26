@@ -27,6 +27,9 @@ class BattleSystem {
         this.timerAnimId = null;
         this.timerStartTime = 0;
 
+        // Food buff
+        this.foodAttackBonus = 0;
+
         // Callbacks
         this.onVictory = null;
         this.onDefeat = null;
@@ -161,7 +164,7 @@ class BattleSystem {
         this.stopTimer();
         const combo = result.combo;
         const equipBonus = window.game ? window.game.inventory.getAttackBonus() : 0;
-        const damage = PLAYER_ATTACK_BASE + equipBonus + (combo * COMBO_BONUS);
+        const damage = PLAYER_ATTACK_BASE + equipBonus + this.foodAttackBonus + (combo * COMBO_BONUS);
 
         // Score
         const baseScore = 100;
